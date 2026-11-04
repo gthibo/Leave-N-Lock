@@ -1,0 +1,76 @@
+package io.github.gthibo.leavenlock.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.gthibo.leavenlock.ui.about.AboutScreen
+import io.github.gthibo.leavenlock.ui.help.HelpScreen
+import io.github.gthibo.leavenlock.ui.home.HomeScreen
+import io.github.gthibo.leavenlock.ui.login.LoginScreen
+import io.github.gthibo.leavenlock.ui.onboarding.OnboardingScreen
+import io.github.gthibo.leavenlock.ui.onboarding.OnboardingViewModel
+import io.github.gthibo.leavenlock.ui.settings.SettingsScreen
+import io.github.gthibo.leavenlock.ui.stats.StatsScreen
+
+object Routes {
+    const val HOME = "home"
+    const val SETTINGS = "settings"
+    const val LOGIN = "login"
+    const val STATS = "stats"
+    const val HELP = "help"
+    const val ABOUT = "about"
+}
+
+@Composable
+fun AppNavigation(navController: NavHostController = rememberNavController()) {
+    // Show the first-run wizard until it's completed; then the normal app.
+    val onboardingVm: OnboardingViewModel = hiltViewModel()
+    val completed by onboardingVm.completed.collectAsStateWithLifecycle()
+    when (completed) {
+        null -> Unit // brief loading; render nothing to avoid a flash
+        false -> OnboardingScreen(onFinish = onboardingVm::complete)
+        else -> AppNavHost(navController)
+    }
+}
+
+@Composable
+private fun AppNavHost(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = Routes.HOME) {
+        composable(Routes.HOME) {
+            HomeScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenHelp = { navController.navigate(Routes.HELP) },
+                onOpenLogin = { navController.navigate(Routes.LOGIN) },
+            )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onLogin = { navController.navigate(Routes.LOGIN) },
+                onStats = { navController.navigate(Routes.STATS) },
+                onHelp = { navController.navigate(Routes.HELP) },
+                onAbout = { navController.navigate(Routes.ABOUT) },
+            )
+        }
+        composable(Routes.STATS) {
+            StatsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.HELP) {
+            HelpScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.ABOUT) {
+            AboutScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = { navController.popBackStack() },
+            )
+        }
+    }
+}

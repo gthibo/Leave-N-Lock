@@ -1,0 +1,48 @@
+name: Bug report
+description: Something didn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste your BlueLink password, PIN, VIN or email** here.
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle (model + year)
+      placeholder: e.g. 2025 Ioniq 5 SEL
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone + Android version
+      placeholder: e.g. Pixel 8, Android 15
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Leave-N-Lock version
+      description: Settings → About
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Run mode
+      options: [Dry run, Armed, Demo]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Activity log (optional)
+      description: Home → Recent activity → copy. Please remove anything personal before pasting.
+      render: text

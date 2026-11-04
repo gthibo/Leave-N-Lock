@@ -1,0 +1,312 @@
+package io.github.gthibo.leavenlock.service
+
+import android.Manifest
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import io.github.gthibo.leavenlock.data.settings.SettingsRepository
+import io.github.gthibo.leavenlock.domain.AutoLockController
+import io.github.gthibo.leavenlock.domain.detection.DetectionState
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * Short-lived foreground service that runs while an evaluation is in flight. It starts
+ * when the car Bluetooth disconnects, drives [AutoLockController], reflects progress in
+ * the notification, and stops itself once a terminal state is reached.
+ */
+@AndroidEntryPoint
+class AutoLockService : Service() {
+
+    @Inject lateinit var controller: AutoLockController
+    @Inject lateinit var settingsRepo: SettingsRepository
+    @Inject lateinit var statusCache: io.github.gthibo.leavenlock.data.status.StatusCache
+    @Inject lateinit var activityRecognition: io.github.gthibo.leavenlock.data.detection.ActivityRecognitionManager
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var observeJob: Job? = null
+    private var showLockNow: Boolean = true
+    private var pinNotification: Boolean = true
+    private var showStatus: Boolean = true
+    // When false, the ongoing notification uses a minimal channel so no status-bar icon shows.
+    private var showNotificationIcon: Boolean = true
+    // The channel the foreground notification is currently posted on (to detect channel changes).
+    private var postedChannelId: String? = null
+    // Last-known vehicle status line, kept so the "watching" notification can still show it.
+    private var lastSummary: String? = null
+    private var currentDetection: DetectionState = DetectionState.IDLE
+    private var confirmedFeedback = false
+    // True while AutoLock is enabled and should keep watching in the background persistently.
+    private var watchMode = false
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        // Single source of truth for the status line: keep it fresh for the whole service lifetime
+        // so the "watching" notification always reflects the last-known vehicle status.
+        scope.launch {
+            showStatus = settingsRepo.settings.first().showStatusInNotification
+            showNotificationIcon = settingsRepo.settings.first().showNotificationIcon
+            statusCache.cached.collect { c ->
+                lastSummary = c.summary.ifBlank { null }
+                // Refresh the watching notification while resting so the new status shows.
+                if (watchMode && currentDetection == DetectionState.IDLE) startForegroundWatch()
+            }
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // A null intent means the system recreated us after a kill (START_STICKY). Resume watching
+        // if it's still enabled — never treat this as a fresh "leaving" trigger.
+        if (intent == null) {
+            startForegroundWatch()
+            watchMode = true
+            scope.launch {
+                val s = settingsRepo.settings.first()
+                showLockNow = s.showLockNowAction
+                pinNotification = s.pinNotification
+                showStatus = s.showStatusInNotification
+                showNotificationIcon = s.showNotificationIcon
+                lastSummary = statusCache.cached.first().summary.ifBlank { null }
+                if (!s.enabled) {
+                    watchMode = false
+                    stop()
+                } else {
+                    startForegroundWatch()
+                }
+            }
+            observe()
+            return START_STICKY
+        }
+
+        when (intent.action) {
+            ACTION_STOP_WATCH -> {
+                // Satisfy the foreground-service contract for this start, then tear down.
+                startForegroundWatch()
+                watchMode = false
+                controller.cancel()
+                // Turning off from the notification must also flip the in-app toggle.
+                scope.launch {
+                    settingsRepo.update { it.copy(enabled = false) }
+                    stop()
+                }
+                return START_NOT_STICKY
+            }
+            ACTION_START_WATCH -> {
+                watchMode = true
+                startForegroundWatch()
+                scope.launch {
+                    val s = settingsRepo.settings.first()
+                    showLockNow = s.showLockNowAction
+                    pinNotification = s.pinNotification
+                    showStatus = s.showStatusInNotification
+                    showNotificationIcon = s.showNotificationIcon
+                    lastSummary = statusCache.cached.first().summary.ifBlank { null }
+                    if (s.useActivityRecognition) activityRecognition.start() else activityRecognition.stop()
+                    startForegroundWatch()
+                }
+                observe()
+                return START_STICKY
+            }
+            ACTION_CANCEL -> {
+                controller.cancel()
+                if (watchMode) startForegroundWatch() else stop()
+                return if (watchMode) START_STICKY else START_NOT_STICKY
+            }
+            ACTION_LOCK_NOW -> {
+                controller.lockNow()
+                observe()
+                return if (watchMode) START_STICKY else START_NOT_STICKY
+            }
+        }
+
+        // Default: a trigger fired (Bluetooth disconnect or "Simulate leaving").
+        scope.launch {
+            val s = settingsRepo.settings.first()
+            showLockNow = s.showLockNowAction
+            showStatus = s.showStatusInNotification
+            showNotificationIcon = s.showNotificationIcon
+            // Soft "listening" chime when an evaluation begins.
+            if (s.soundOnLock && intent.action != ACTION_ALREADY_RUNNING) {
+                runCatching { io.github.gthibo.leavenlock.data.sound.EvChime.playNotify() }
+            }
+        }
+        startForegroundCompat(DetectionState.CONFIRMING, 0)
+        if (intent.action != ACTION_ALREADY_RUNNING) controller.onTriggerFired()
+        observe()
+        return if (watchMode) START_STICKY else START_NOT_STICKY
+    }
+
+    // If the user swipes the app out of Recents, keep watching alive when enabled.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (watchMode) startForegroundWatch()
+        super.onTaskRemoved(rootIntent)
+    }
+
+    private fun observe() {
+        if (observeJob != null) return
+        observeJob = scope.launch {
+            controller.state.collect { s ->
+                currentDetection = s.detection
+                updateNotification(s.detection, s.graceRemaining, s.statusSummary)
+                if (s.detection == DetectionState.LOCKED && !confirmedFeedback) {
+                    confirmedFeedback = true
+                    playLockConfirmation()
+                }
+                if (s.detection.isTerminal()) {
+                    // Let the user glance at the result, then either keep watching or tear down.
+                    delay(4000)
+                    if (watchMode) {
+                        confirmedFeedback = false
+                        startForegroundWatch()
+                    } else {
+                        stop()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun playLockConfirmation() = scope.launch {
+        val settings = settingsRepo.settings.first()
+        if (settings.hapticOnLock) vibrateOnce()
+        if (settings.soundOnLock) runCatching {
+            io.github.gthibo.leavenlock.data.sound.LockSound.play(this@AutoLockService, settings.customLockSoundUri)
+        }
+    }
+
+    private fun vibrateOnce() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        } ?: return
+        vibrator.vibrate(VibrationEffect.createOneShot(120, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
+
+    private fun startForegroundCompat(state: DetectionState, grace: Int, summary: String? = null) {
+        val channel = channelId()
+        postForeground(AutoLockNotification.build(this, state, grace, summary, showLockNow, channel), channel)
+    }
+
+    private fun startForegroundWatch() {
+        val summary = if (showStatus) lastSummary else null
+        val channel = channelId()
+        postForeground(
+            AutoLockNotification.buildWatching(this, statusSummary = summary, pinned = pinNotification, channelId = channel),
+            channel,
+        )
+    }
+
+    private fun fgServiceType(): Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0
+
+    // A notification's channel can't change once it's posted. So when the target channel changes
+    // (e.g. the status-bar-icon toggle switches to the minimal channel), remove it first and re-post
+    // fresh — that's what makes IMPORTANCE_MIN take effect and leaves NO status-bar icon or gap.
+    private fun postForeground(notification: android.app.Notification, channel: String) {
+        if (postedChannelId != null && postedChannelId != channel) {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        }
+        ServiceCompat.startForeground(this, AutoLockNotification.NOTIFICATION_ID, notification, fgServiceType())
+        postedChannelId = channel
+    }
+
+    // Off = the minimal-importance channel, which keeps the foreground notification out of the status bar.
+    private fun channelId(): String =
+        if (showNotificationIcon) io.github.gthibo.leavenlock.AutoLockApp.CHANNEL_ID else io.github.gthibo.leavenlock.AutoLockApp.CHANNEL_ID_MINIMAL
+    private fun updateNotification(state: DetectionState, grace: Int, summary: String?) {
+        when {
+            // Resting state while watching → the persistent "watching" notification.
+            watchMode && state == DetectionState.IDLE -> startForegroundWatch()
+            // Terminal result on a one-off run (not watching) → detach so it lingers, then stop.
+            state.isTerminal() && !watchMode -> {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
+                if (!canPostNotifications()) return
+                try {
+                    NotificationManagerCompat.from(this)
+                        .notify(AutoLockNotification.NOTIFICATION_ID, AutoLockNotification.build(this, state, grace, summary, showLockNow, channelId()))
+                } catch (_: SecurityException) {
+                    // Notifications permission revoked between check and post — ignore.
+                }
+            }
+            else -> startForegroundCompat(state, grace, summary)
+        }
+    }
+
+    private fun canPostNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+        return NotificationManagerCompat.from(this).areNotificationsEnabled()
+    }
+
+    private fun stop() {
+        observeJob?.cancel()
+        observeJob = null
+        activityRecognition.stop()
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_CANCEL = "io.github.gthibo.leavenlock.CANCEL"
+        const val ACTION_LOCK_NOW = "io.github.gthibo.leavenlock.LOCK_NOW"
+        const val ACTION_ALREADY_RUNNING = "io.github.gthibo.leavenlock.ALREADY_RUNNING"
+        const val ACTION_START_WATCH = "io.github.gthibo.leavenlock.START_WATCH"
+        const val ACTION_STOP_WATCH = "io.github.gthibo.leavenlock.STOP_WATCH"
+
+        /** Fire a one-off evaluation (Bluetooth trigger / "Simulate leaving"). */
+        fun start(context: Context) = safeStart(context, null)
+
+        /** Begin persistent background watching (call when AutoLock is enabled). */
+        fun startWatching(context: Context) = safeStart(context, ACTION_START_WATCH)
+
+        /** Stop persistent background watching (call when AutoLock is disabled). */
+        fun stopWatching(context: Context) = safeStart(context, ACTION_STOP_WATCH)
+
+        private fun safeStart(context: Context, action: String?) {
+            val intent = Intent(context, AutoLockService::class.java).apply { action?.let { setAction(it) } }
+            try {
+                context.startForegroundService(intent)
+            } catch (t: Throwable) {
+                // e.g. ForegroundServiceStartNotAllowedException when the OS blocks a background start.
+                android.util.Log.w("AutoLockService", "startForegroundService blocked: ${t.message}")
+            }
+        }
+    }
+}
+
+private fun DetectionState.isTerminal(): Boolean = when (this) {
+    DetectionState.LOCKED, DetectionState.SKIPPED, DetectionState.ABORTED, DetectionState.ERROR,
+    DetectionState.SENT_UNVERIFIED, DetectionState.NOT_LOCKED_OPEN -> true
+    else -> false
+}

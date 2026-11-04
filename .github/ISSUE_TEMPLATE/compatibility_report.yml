@@ -1,0 +1,31 @@
+name: Compatibility report
+description: Tell us whether Leave-N-Lock works with your Hyundai
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Leave-N-Lock has only been tested on an Ioniq 5. Reports for other US BlueLink Hyundais
+        help everyone. **Never paste your BlueLink password, PIN, VIN or email** here.
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle (model + year + trim)
+      placeholder: e.g. 2024 Tucson Hybrid Limited
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What worked?
+      options:
+        - label: Sign in
+        - label: Vehicle shows up after "Reload vehicles"
+        - label: Status card shows lock state correctly
+        - label: Manual "Lock now" locked the car
+        - label: Automatic walk-away lock (Armed) locked the car
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything odd? Missing battery %, wrong lock state, error messages…

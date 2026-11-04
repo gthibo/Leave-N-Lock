@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Flat silhouette for Android 13+ themed icons; system applies the tint. -->
+    <group
+        android:scaleX="0.82"
+        android:scaleY="0.82"
+        android:pivotX="54"
+        android:pivotY="55">
+        <path
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M41,50 V41 a13,13 0 0 1 26,0 V50" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M38,50 h32 a7,7 0 0 1 7,7 v22 a7,7 0 0 1 -7,7 h-32 a7,7 0 0 1 -7,-7 v-22 a7,7 0 0 1 7,-7 z" />
+    </group>
+</vector>
