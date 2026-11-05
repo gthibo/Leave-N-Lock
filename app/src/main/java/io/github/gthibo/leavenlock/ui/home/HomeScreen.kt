@@ -6,13 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,47 +20,17 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.BatteryStd
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Warning
-
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Route
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,31 +40,47 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.data.bluelink.model.LockState
 import io.github.gthibo.leavenlock.data.settings.RunMode
 import io.github.gthibo.leavenlock.domain.LogEntry
 import io.github.gthibo.leavenlock.domain.LogLevel
 import io.github.gthibo.leavenlock.domain.detection.DetectionState
-import io.github.gthibo.leavenlock.ui.theme.ParametricPixels
-import io.github.gthibo.leavenlock.ui.theme.PixelBand
-import io.github.gthibo.leavenlock.ui.theme.PixelField
-import io.github.gthibo.leavenlock.ui.theme.ScanningPixelBand
-import io.github.gthibo.leavenlock.ui.theme.ambientBackground
-import io.github.gthibo.leavenlock.ui.theme.brandGradient
+import io.github.gthibo.leavenlock.ui.components.BrandLockup
+import io.github.gthibo.leavenlock.ui.components.ButtonVariant
+import io.github.gthibo.leavenlock.ui.components.CardTone
+import io.github.gthibo.leavenlock.ui.components.Eyebrow
+import io.github.gthibo.leavenlock.ui.components.Hairline
+import io.github.gthibo.leavenlock.ui.components.IconWell
+import io.github.gthibo.leavenlock.ui.components.LabelTone
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.PgField
+import io.github.gthibo.leavenlock.ui.components.PgIcon
+import io.github.gthibo.leavenlock.ui.components.PgIconButton
+import io.github.gthibo.leavenlock.ui.components.PgLabel
+import io.github.gthibo.leavenlock.ui.components.PgProgress
+import io.github.gthibo.leavenlock.ui.components.PgRadio
+import io.github.gthibo.leavenlock.ui.components.PgSwitch
+import io.github.gthibo.leavenlock.ui.components.PgTopBar
+import io.github.gthibo.leavenlock.ui.components.SegmentMeter
+import io.github.gthibo.leavenlock.ui.components.StatTile
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainShape
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 import io.github.gthibo.leavenlock.ui.util.copyToClipboard
 import io.github.gthibo.leavenlock.ui.util.toClipboardText
-import io.github.gthibo.leavenlock.ui.theme.heroGlow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,168 +127,138 @@ fun HomeScreen(
         )
     }
 
-    Box(Modifier.fillMaxSize().background(ambientBackground())) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            topBar = {
-                TopAppBar(
-                    title = { BrandWordmark() },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    actions = {
-                        IconButton(onClick = onOpenHelp) {
-                            Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = stringResource(R.string.cd_help))
-                        }
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.cd_settings))
-                        }
-                    },
-                )
-            },
-        ) { padding ->
-            PullToRefreshBox(
-                isRefreshing = vehicleStatus.loading,
-                onRefresh = { viewModel.refreshStatus(force = true) },
+    Scaffold(
+        containerColor = Porcelain.colors.surface,
+        topBar = {
+            PgTopBar(
+                brand = { BrandLockup() },
+                actions = {
+                    PgIconButton(R.drawable.ic_pg_help, stringResource(R.string.cd_help), onOpenHelp)
+                    PgIconButton(R.drawable.ic_pg_sliders, stringResource(R.string.cd_settings), onOpenSettings)
+                },
+            )
+        },
+    ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = vehicleStatus.loading,
+            onRefresh = { viewModel.refreshStatus(force = true) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(horizontal = PorcelainSpace.screenMargin),
+                verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s4),
+                contentPadding = PaddingValues(top = PorcelainSpace.s1, bottom = PorcelainSpace.s6),
             ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                    contentPadding = PaddingValues(top = 4.dp, bottom = 28.dp),
-                ) {
+                item {
+                    StatusCard(
+                        enabled = settings.enabled,
+                        demoMode = settings.demoMode,
+                        dryRun = settings.runMode == RunMode.DRY_RUN,
+                        detection = autoLock.detection,
+                        graceRemaining = autoLock.graceRemaining,
+                        graceTotal = settings.graceSeconds,
+                        vehicleName = settings.vehicleNickname,
+                        onToggle = viewModel::setEnabled,
+                    )
+                }
+                if (vehicleStatus.needsReauth) {
+                    item { ReauthBanner(onSignIn = onOpenLogin) }
+                }
+                if (vehicleStatus.lowVoltage) {
+                    item { LowVoltageBanner(percent = vehicleStatus.status?.twelveVoltPercent) }
+                }
+                if (settings.knownVehicles.size > 1) {
                     item {
-                        StatusCard(
-                            enabled = settings.enabled,
-                            demoMode = settings.demoMode,
-                            dryRun = settings.runMode == RunMode.DRY_RUN,
-                            detection = autoLock.detection,
-                            graceRemaining = autoLock.graceRemaining,
-                            vehicleName = settings.vehicleNickname,
-                            onToggle = viewModel::setEnabled,
+                        VehicleSwitcher(
+                            vehicles = settings.knownVehicles,
+                            selectedId = settings.vehicleId,
+                            onSelect = viewModel::selectVehicle,
                         )
                     }
-                    if (vehicleStatus.needsReauth) {
-                        item { ReauthBanner(onSignIn = onOpenLogin) }
+                }
+                item {
+                    VehicleStatusCard(
+                        ui = vehicleStatus,
+                        parkedLabel = settings.parkedLabel.takeIf { settings.rememberParkedLocation },
+                        parkedLat = settings.parkedLat.takeIf { settings.rememberParkedLocation },
+                        parkedLng = settings.parkedLng.takeIf { settings.rememberParkedLocation },
+                        onRefresh = { viewModel.refreshStatus(force = true) },
+                    )
+                }
+                item {
+                    // Simulating in Armed mode on a real account would send a real lock — only
+                    // allow it in Demo or Dry run.
+                    val armedLive = settings.runMode == RunMode.ARMED && !settings.demoMode
+                    Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                            PgButton(
+                                text = if (armedLive) stringResource(R.string.home_simulate_off) else stringResource(R.string.home_simulate),
+                                onClick = viewModel::runNow,
+                                modifier = Modifier.weight(1f),
+                                variant = ButtonVariant.Tonal,
+                                icon = R.drawable.ic_pg_car,
+                                enabled = (settings.isConfigured || settings.demoMode) && !armedLive,
+                            )
+                            PgButton(
+                                text = stringResource(R.string.action_cancel),
+                                onClick = viewModel::cancel,
+                                variant = ButtonVariant.Secondary,
+                            )
+                        }
+                        if (armedLive) {
+                            Text(
+                                stringResource(R.string.home_simulate_hint),
+                                style = PorcelainText.body.copy(fontSize = 14.sp, lineHeight = 20.sp),
+                                color = mutedText,
+                            )
+                        }
+                        if (settings.isConfigured || settings.demoMode) {
+                            val alreadyLocked = vehicleStatus.status?.lockState == LockState.LOCKED
+                            val alreadyUnlocked = vehicleStatus.status?.lockState == LockState.UNLOCKED
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                PgButton(
+                                    text = if (alreadyLocked) stringResource(R.string.action_already_locked) else stringResource(R.string.action_lock_now),
+                                    onClick = { pendingCommand = true },
+                                    modifier = Modifier.weight(1f),
+                                    icon = R.drawable.ic_pg_lock,
+                                    enabled = !alreadyLocked,
+                                )
+                                PgButton(
+                                    text = if (alreadyUnlocked) stringResource(R.string.action_already_unlocked) else stringResource(R.string.action_unlock_now),
+                                    onClick = { pendingCommand = false },
+                                    modifier = Modifier.weight(1f),
+                                    variant = ButtonVariant.Danger,
+                                    icon = R.drawable.ic_pg_unlock,
+                                    enabled = !alreadyUnlocked,
+                                )
+                            }
+                        }
                     }
-                    if (vehicleStatus.lowVoltage) {
-                        item { LowVoltageBanner(percent = vehicleStatus.status?.twelveVoltPercent) }
-                    }
-                    if (settings.knownVehicles.size > 1) {
-                        item {
-                            VehicleSwitcher(
-                                vehicles = settings.knownVehicles,
-                                selectedId = settings.vehicleId,
-                                onSelect = viewModel::selectVehicle,
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = PorcelainSpace.s2),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Eyebrow(stringResource(R.string.home_recent_activity))
+                        if (log.isNotEmpty()) {
+                            PgButton(
+                                text = stringResource(R.string.action_copy),
+                                onClick = { context.copyToClipboard("LEAVE/LOCK activity log", log.toClipboardText()) },
+                                variant = ButtonVariant.Ghost,
                             )
                         }
                     }
-                    item {
-                        VehicleStatusCard(
-                            ui = vehicleStatus,
-                            parkedLabel = settings.parkedLabel.takeIf { settings.rememberParkedLocation },
-                            parkedLat = settings.parkedLat.takeIf { settings.rememberParkedLocation },
-                            parkedLng = settings.parkedLng.takeIf { settings.rememberParkedLocation },
-                            onRefresh = { viewModel.refreshStatus(force = true) },
-                        )
-                    }
-                    item {
-                        // Simulating in Armed mode on a real account would send a real lock — only
-                        // allow it in Demo or Dry run.
-                        val armedLive = settings.runMode == RunMode.ARMED && !settings.demoMode
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(
-                                    onClick = viewModel::runNow,
-                                    modifier = Modifier.weight(1f).height(56.dp),
-                                    shape = RoundedCornerShape(18.dp),
-                                    enabled = (settings.isConfigured || settings.demoMode) && !armedLive,
-                                ) {
-                                    Icon(Icons.Default.DirectionsCar, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        if (armedLive) stringResource(R.string.home_simulate_off) else stringResource(R.string.home_simulate),
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-                                OutlinedButton(
-                                    onClick = viewModel::cancel,
-                                    modifier = Modifier.height(56.dp),
-                                    shape = RoundedCornerShape(18.dp),
-                                ) {
-                                    Text(stringResource(R.string.action_cancel))
-                                }
-                            }
-                            if (armedLive) {
-                                Text(
-                                    stringResource(R.string.home_simulate_hint),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (settings.isConfigured || settings.demoMode) {
-                                val alreadyLocked = vehicleStatus.status?.lockState == LockState.LOCKED
-                                val alreadyUnlocked = vehicleStatus.status?.lockState == LockState.UNLOCKED
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Button(
-                                        onClick = { pendingCommand = true },
-                                        modifier = Modifier.weight(1f).height(52.dp),
-                                        shape = RoundedCornerShape(18.dp),
-                                        enabled = !alreadyLocked,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        ),
-                                    ) {
-                                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            if (alreadyLocked) stringResource(R.string.action_already_locked) else stringResource(R.string.action_lock_now),
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                    }
-                                    Button(
-                                        onClick = { pendingCommand = false },
-                                        modifier = Modifier.weight(1f).height(52.dp),
-                                        shape = RoundedCornerShape(18.dp),
-                                        enabled = !alreadyUnlocked,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                        ),
-                                    ) {
-                                        Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            if (alreadyUnlocked) stringResource(R.string.action_already_unlocked) else stringResource(R.string.action_unlock_now),
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            SectionHeader(stringResource(R.string.home_recent_activity))
-                            if (log.isNotEmpty()) {
-                                androidx.compose.material3.TextButton(onClick = {
-                                    context.copyToClipboard("Leave-N-Lock activity log", log.toClipboardText())
-                                }) { Text(stringResource(R.string.action_copy)) }
-                            }
-                        }
-                    }
-                    item { ActivityLogCard(log) }
                 }
+                item { ActivityLogCard(log) }
             }
         }
     }
@@ -321,153 +271,80 @@ private fun LockCommandDialog(lock: Boolean, requirePin: Boolean, onDismiss: () 
     val pinBodyRes = if (lock) R.string.home_lock_dialog_pin else R.string.home_unlock_dialog_pin
     val plainBodyRes = if (lock) R.string.home_lock_dialog_plain else R.string.home_unlock_dialog_plain
     val actionRes = if (lock) R.string.action_lock_now else R.string.action_unlock_now
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(if (lock) Icons.Default.Lock else Icons.Default.LockOpen, contentDescription = null) },
-        title = { Text(stringResource(titleRes)) },
+        shape = PorcelainShape.radiusSm,
+        containerColor = Porcelain.colors.surfaceRaised,
+        icon = { PgIcon(if (lock) R.drawable.ic_pg_lock else R.drawable.ic_pg_unlock, contentDescription = null, size = 24.dp) },
+        title = { Text(stringResource(titleRes), style = PorcelainText.heading2) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s3)) {
                 Text(
                     if (requirePin) stringResource(pinBodyRes) else stringResource(plainBodyRes),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PorcelainText.body,
                 )
                 if (requirePin) {
-                    androidx.compose.material3.OutlinedTextField(
+                    PgField(
+                        label = stringResource(R.string.home_pin_label),
                         value = pin,
                         onValueChange = { if (it.length <= 8) pin = it.filter(Char::isDigit) },
-                        label = { Text(stringResource(R.string.home_pin_label)) },
-                        singleLine = true,
-                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     )
                 }
             }
         },
         confirmButton = {
-            Button(
+            PgButton(
+                text = stringResource(actionRes),
                 onClick = { onConfirm(pin.ifBlank { null }) },
+                variant = if (lock) ButtonVariant.Primary else ButtonVariant.Danger,
                 enabled = !requirePin || pin.length >= 4,
-                colors = if (lock) ButtonDefaults.buttonColors()
-                else ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError,
-                ),
-            ) { Text(stringResource(actionRes)) }
+            )
         },
-        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        dismissButton = {
+            PgButton(text = stringResource(R.string.action_cancel), onClick = onDismiss, variant = ButtonVariant.Ghost)
+        },
     )
 }
 
 @Composable
 private fun ReauthBanner(onSignIn: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-    ) {
-        Row(
-            Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
-            Text(
-                stringResource(R.string.home_reauth),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.weight(1f),
-            )
-            Button(onClick = onSignIn) { Text(stringResource(R.string.action_sign_in)) }
+    PgCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s3)) {
+            PgIcon(R.drawable.ic_pg_lock, contentDescription = null, tint = Porcelain.colors.warn)
+            Text(stringResource(R.string.home_reauth), style = PorcelainText.body, modifier = Modifier.weight(1f))
         }
+        PgButton(text = stringResource(R.string.action_sign_in), onClick = onSignIn, modifier = Modifier.fillMaxWidth())
     }
 }
 
 @Composable
 private fun LowVoltageBanner(percent: Int?) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-    ) {
-        Row(
-            Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.home_low_volt_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-                Text(
-                    if (percent != null) stringResource(R.string.home_low_volt_body, percent)
-                    else stringResource(R.string.home_low_volt_body_generic),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
+    PgCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s3)) {
+            PgIcon(R.drawable.ic_pg_battery, contentDescription = null, tint = Porcelain.colors.warn)
+            Text(stringResource(R.string.home_low_volt_title), style = PorcelainText.heading3, color = Porcelain.colors.warn)
         }
+        Text(
+            if (percent != null) stringResource(R.string.home_low_volt_body, percent)
+            else stringResource(R.string.home_low_volt_body_generic),
+            style = PorcelainText.body,
+            color = mutedText,
+        )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VehicleSwitcher(
     vehicles: List<io.github.gthibo.leavenlock.data.settings.KnownVehicle>,
     selectedId: String?,
     onSelect: (io.github.gthibo.leavenlock.data.settings.KnownVehicle) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionHeader(stringResource(R.string.home_vehicles))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            vehicles.forEach { v ->
-                androidx.compose.material3.FilterChip(
-                    selected = v.id == selectedId,
-                    onClick = { onSelect(v) },
-                    label = { Text(v.nickname) },
-                    leadingIcon = { Icon(Icons.Default.DirectionsCar, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                )
-            }
+    PgCard(eyebrow = stringResource(R.string.home_vehicles), spacing = 0.dp) {
+        vehicles.forEach { v ->
+            PgRadio(label = v.nickname, selected = v.id == selectedId, onClick = { onSelect(v) })
         }
-    }
-}
-
-@Composable
-private fun BrandWordmark() {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        ParametricPixels(Modifier.size(30.dp, 19.dp), color = MaterialTheme.colorScheme.primary)
-        Row {
-            Text("Auto", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-            Text(
-                "Lock",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(
-            Modifier
-                .size(width = 4.dp, height = 18.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.primary),
-        )
-        Text(
-            title.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
@@ -479,6 +356,7 @@ private fun StatusCard(
     dryRun: Boolean,
     detection: DetectionState,
     graceRemaining: Int,
+    graceTotal: Int,
     vehicleName: String?,
     onToggle: (Boolean) -> Unit,
 ) {
@@ -489,134 +367,77 @@ private fun StatusCard(
         detection == DetectionState.VERIFYING ||
         detection == DetectionState.AWAITING_CONFIRM ||
         detection == DetectionState.LOCKING
-    val secured = detection == DetectionState.LOCKED || detection == DetectionState.SKIPPED
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (enabled) 10.dp else 2.dp),
+    PgCard(
+        modifier = Modifier.animateContentSize(),
+        tone = CardTone.Hero,
+        cut = 24.dp,
+        eyebrow = stringResource(R.string.home_system_status),
+        pixels = listOf("w.w", ".d.", "w.m"),
+        pixelsAtBottom = true,
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = if (enabled) brandGradient()
-                    else Brush.linearGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.surfaceContainerHigh,
-                            MaterialTheme.colorScheme.surfaceContainer,
-                        ),
-                    ),
-                ),
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val onGradient = if (enabled) Color.White else MaterialTheme.colorScheme.onSurface
-            // Soft animated pixel texture behind the content (softness baked into the draw, no blur).
-            PixelField(
-                modifier = Modifier.matchParentSize(),
-                color = onGradient.copy(alpha = 0.16f),
-                active = enabled,
+            Text(
+                text = if (enabled) stringResource(R.string.home_watching) else stringResource(R.string.home_off),
+                style = PorcelainText.status,
             )
-            if (enabled) {
-                Box(Modifier.fillMaxWidth().height(220.dp).background(heroGlow()))
+            PgSwitch(
+                checked = enabled,
+                onCheckedChange = onToggle,
+                contentDescription = stringResource(R.string.home_switch_cd),
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            PgIcon(R.drawable.ic_pg_car, contentDescription = null)
+            Text(vehicleName ?: stringResource(R.string.home_no_vehicle), style = PorcelainText.heading3)
+        }
+
+        AnimatedContent(targetState = detection, label = "detection") { state ->
+            val label = when (state) {
+                DetectionState.IDLE -> if (enabled) stringResource(R.string.home_state_idle) else stringResource(R.string.home_state_disabled)
+                DetectionState.ARMED -> stringResource(R.string.home_state_armed)
+                DetectionState.CONFIRMING -> stringResource(R.string.home_state_confirming)
+                DetectionState.GRACE -> stringResource(R.string.home_state_grace, graceRemaining)
+                DetectionState.VERIFYING -> stringResource(R.string.home_state_verifying)
+                DetectionState.AWAITING_CONFIRM -> stringResource(R.string.home_state_awaiting)
+                DetectionState.LOCKING -> stringResource(R.string.home_state_locking)
+                DetectionState.LOCKED -> stringResource(R.string.home_state_locked)
+                DetectionState.SKIPPED -> stringResource(R.string.home_state_skipped)
+                DetectionState.ABORTED -> stringResource(R.string.home_state_aborted)
+                DetectionState.ERROR -> stringResource(R.string.home_state_error)
+                DetectionState.SENT_UNVERIFIED -> stringResource(R.string.home_state_unverified)
+                DetectionState.NOT_LOCKED_OPEN -> stringResource(R.string.home_state_not_locked_open)
             }
-            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    stringResource(R.string.home_system_status),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = onGradient.copy(alpha = 0.7f),
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Heartbeat dot pulses whenever AutoLock is watching.
-                        if (enabled) PulsingDot(onGradient)
-                        Text(
-                            text = if (enabled) stringResource(R.string.home_watching) else stringResource(R.string.home_off),
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Black,
-                            color = onGradient,
-                        )
-                    }
-                    Switch(
-                        checked = enabled,
-                        onCheckedChange = onToggle,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color.White.copy(alpha = 0.35f),
-                            checkedBorderColor = Color.White.copy(alpha = 0.6f),
-                        ),
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(
-                        Icons.Default.DirectionsCar,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = onGradient.copy(alpha = 0.9f),
-                    )
-                    Text(
-                        vehicleName ?: stringResource(R.string.home_no_vehicle),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = onGradient.copy(alpha = 0.95f),
-                    )
-                }
+            Text(label, style = PorcelainText.body, color = mutedText)
+        }
 
-                AnimatedContent(targetState = detection, label = "detection") { state ->
-                    val label = when (state) {
-                        DetectionState.IDLE -> if (enabled) stringResource(R.string.home_state_idle) else stringResource(R.string.home_state_disabled)
-                        DetectionState.ARMED -> stringResource(R.string.home_state_armed)
-                        DetectionState.CONFIRMING -> stringResource(R.string.home_state_confirming)
-                        DetectionState.GRACE -> stringResource(R.string.home_state_grace, graceRemaining)
-                        DetectionState.VERIFYING -> stringResource(R.string.home_state_verifying)
-                        DetectionState.AWAITING_CONFIRM -> stringResource(R.string.home_state_awaiting)
-                        DetectionState.LOCKING -> stringResource(R.string.home_state_locking)
-                        DetectionState.LOCKED -> stringResource(R.string.home_state_locked)
-                        DetectionState.SKIPPED -> stringResource(R.string.home_state_skipped)
-                        DetectionState.ABORTED -> stringResource(R.string.home_state_aborted)
-                        DetectionState.ERROR -> stringResource(R.string.home_state_error)
-                        DetectionState.SENT_UNVERIFIED -> stringResource(R.string.home_state_unverified)
-                        DetectionState.NOT_LOCKED_OPEN -> stringResource(R.string.home_state_not_locked_open)
-                    }
-                    Text(label, style = MaterialTheme.typography.bodyMedium, color = onGradient.copy(alpha = 0.85f))
-                }
+        // The meter means something: an amber countdown during the grace period, amber while a
+        // check or lock is in flight, and a full teal lamp while watching.
+        when {
+            detection == DetectionState.GRACE && graceTotal > 0 -> SegmentMeter(
+                value = (graceRemaining * 100) / graceTotal,
+                contentDescription = stringResource(R.string.home_state_grace, graceRemaining),
+                segments = 16,
+                signal = true,
+            )
+            active -> SegmentMeter(value = 100, contentDescription = stringResource(R.string.home_meter_busy), segments = 16, signal = true)
+            enabled -> SegmentMeter(value = 100, contentDescription = stringResource(R.string.home_watching), segments = 16)
+        }
 
-                // The pixel bar is meaningful, not just decorative:
-                //  • scanning while an evaluation is in flight,
-                //  • a solid "secured" bar once the car is locked/already safe,
-                //  • a dim static bar when armed and simply waiting.
-                when {
-                    active -> ScanningPixelBand(
-                        modifier = Modifier.fillMaxWidth().height(10.dp),
-                        color = onGradient.copy(alpha = 0.9f),
-                    )
-                    secured -> PixelBand(
-                        modifier = Modifier.fillMaxWidth().height(10.dp),
-                        color = onGradient.copy(alpha = 0.95f),
-                        cells = 16,
-                        dim = false,
-                    )
-                    enabled -> PixelBand(
-                        modifier = Modifier.fillMaxWidth().height(10.dp),
-                        color = onGradient.copy(alpha = 0.35f),
-                        cells = 16,
-                    )
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (demoMode) Badge(stringResource(R.string.badge_demo), onGradient)
-                    Badge(if (dryRun) stringResource(R.string.badge_dry_run) else stringResource(R.string.badge_armed), onGradient)
-                }
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            if (demoMode) PgLabel(stringResource(R.string.badge_demo))
+            PgLabel(
+                if (dryRun) stringResource(R.string.badge_dry_run) else stringResource(R.string.badge_armed),
+                tone = if (dryRun) LabelTone.Teal else LabelTone.Live,
+            )
         }
     }
 }
 
-// ── Vehicle status card (gradient hero, state-driven) ───────────────
+// ── Vehicle status card ─────────────────────────────────────────────
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VehicleStatusCard(
@@ -630,304 +451,156 @@ private fun VehicleStatusCard(
     val lockState = status?.lockState ?: LockState.UNKNOWN
     val now = rememberNow()
     val context = LocalContext.current
-    val gradient = when (lockState) {
-        LockState.LOCKED -> Brush.linearGradient(listOf(Color(0xFF0E8575), Color(0xFF0A4E48)))
-        LockState.UNLOCKED -> Brush.linearGradient(listOf(Color(0xFFC9503E), Color(0xFF7E2A20)))
-        LockState.UNKNOWN -> Brush.linearGradient(listOf(Color(0xFF34413E), Color(0xFF1E2725)))
-    }
-    val onCard = Color.White
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-    ) {
-        Box(Modifier.fillMaxWidth().background(gradient)) {
-            // Soft animated pixel texture behind the content (softness baked into the draw, no blur).
-            PixelField(
-                modifier = Modifier.matchParentSize(),
-                color = onCard.copy(alpha = 0.16f),
-                active = lockState == LockState.LOCKED,
+    PgCard(
+        modifier = Modifier.animateContentSize(),
+        eyebrow = stringResource(R.string.home_vehicle),
+        meta = {
+            PgIconButton(
+                R.drawable.ic_pg_refresh,
+                if (ui.loading) stringResource(R.string.home_refreshing_cd) else stringResource(R.string.home_refresh_status),
+                onRefresh,
+                enabled = !ui.loading,
+                size = 22.dp,
+                modifier = Modifier.padding(start = 0.dp).size(PorcelainSpace.touchTarget),
             )
-            Box(Modifier.fillMaxWidth().height(180.dp).background(heroGlow()))
-            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(stringResource(R.string.home_vehicle), style = MaterialTheme.typography.labelLarge, color = onCard.copy(alpha = 0.75f))
-                    RefreshButton(loading = ui.loading, onRefresh = onRefresh, tint = onCard)
-                }
-
-                AnimatedContent(targetState = lockState, label = "lock") { state ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Box(
-                            Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(onCard.copy(alpha = 0.18f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = if (state == LockState.LOCKED) Icons.Default.Lock else Icons.Default.LockOpen,
-                                contentDescription = null,
-                                tint = onCard,
-                                modifier = Modifier.size(34.dp),
-                            )
-                        }
-                        Column {
-                            Text(
-                                when (state) {
-                                    LockState.LOCKED -> stringResource(R.string.lock_locked)
-                                    LockState.UNLOCKED -> stringResource(R.string.lock_unlocked)
-                                    LockState.UNKNOWN -> stringResource(R.string.lock_unknown)
-                                },
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Black,
-                                color = onCard,
-                            )
-                            Text(
-                                text = when {
-                                    ui.loading -> stringResource(R.string.home_refreshing)
-
-                                    status != null -> {
-                                        val retrieved = ui.lastRefreshEpochMs?.let {
-                                            stringResource(R.string.home_retrieved, relativeTime(it, now, context))
-                                        } ?: stringResource(R.string.home_retrieved_unknown)
-                                        val reported = status.reportedAtEpochMs?.let {
-                                            stringResource(R.string.home_car_reported, relativeTime(it, now, context))
-                                        } ?: stringResource(R.string.home_car_reported_unknown)
-
-                                        "$retrieved\n$reported"
-                                    }
-
-                                    else -> stringResource(R.string.home_not_checked)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = onCard.copy(alpha = 0.75f),
-                            )
-                        }
-                    }
-                }
-
-                ui.error?.let {
-                    Text(it, color = onCard, style = MaterialTheme.typography.bodyMedium)
-                }
-
-                if (status != null) {
-                    status.evBatteryPercent?.let { pct ->
-                        BatteryBar(percent = pct, onCard = onCard)
-                    }
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        status.rangeKm?.let {
-                            HeroStatChip(Icons.Default.Route, stringResource(R.string.home_range_value, it), stringResource(R.string.home_range), onCard)
-                        }
-                        status.twelveVoltPercent?.let {
-                            HeroStatChip(Icons.Default.BatteryStd, "$it%", stringResource(R.string.home_twelve_volt), onCard)
-                        }
-                        HeroStatChip(
-                            icon = Icons.Default.Bolt,
-                            value = if (status.engineRunning) stringResource(R.string.state_on) else stringResource(R.string.state_off),
-                            label = stringResource(R.string.home_engine),
-                            onCard = onCard,
+        },
+    ) {
+        AnimatedContent(targetState = lockState, label = "lock") { state ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s4)) {
+                IconWell(if (state == LockState.LOCKED) R.drawable.ic_pg_lock else R.drawable.ic_pg_unlock)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        Text(
+                            when (state) {
+                                LockState.LOCKED -> stringResource(R.string.lock_locked)
+                                LockState.UNLOCKED -> stringResource(R.string.lock_unlocked)
+                                LockState.UNKNOWN -> stringResource(R.string.lock_unknown)
+                            },
+                            style = PorcelainText.heading1.copy(fontWeight = FontWeight.W600),
                         )
+                        // Unlocked is an attention state: one amber lamp pixel, never colour alone.
+                        if (state == LockState.UNLOCKED) Box(Modifier.size(PorcelainSpace.pixel).background(Porcelain.colors.signal))
                     }
-                    status.anyDoorOpen?.takeIf { it }?.let {
-                        Text(stringResource(R.string.home_door_open), color = onCard, style = MaterialTheme.typography.bodySmall)
-                    }
-                } else if (ui.loading) {
-                    // First-ever load with nothing cached — show shimmering skeletons.
-                    SkeletonBar(onCard)
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        repeat(3) { SkeletonChip(onCard) }
-                    }
-                }
+                    Text(
+                        text = when {
+                            ui.loading -> stringResource(R.string.home_refreshing)
 
-                parkedLabel?.let {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { openParkedInMaps(context, parkedLat, parkedLng, it) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Icon(Icons.Default.Place, contentDescription = null, modifier = Modifier.size(16.dp), tint = onCard.copy(alpha = 0.9f))
-                        Text(stringResource(R.string.home_parked_near, it), style = MaterialTheme.typography.bodySmall, color = onCard.copy(alpha = 0.9f))
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.cd_open_maps), modifier = Modifier.size(14.dp), tint = onCard.copy(alpha = 0.7f))
-                    }
+                            status != null -> {
+                                val retrieved = ui.lastRefreshEpochMs?.let {
+                                    stringResource(R.string.home_retrieved, relativeTime(it, now, context))
+                                } ?: stringResource(R.string.home_retrieved_unknown)
+                                val reported = status.reportedAtEpochMs?.let {
+                                    stringResource(R.string.home_car_reported, relativeTime(it, now, context))
+                                } ?: stringResource(R.string.home_car_reported_unknown)
+
+                                "$retrieved\n$reported"
+                            }
+
+                            else -> stringResource(R.string.home_not_checked)
+                        },
+                        style = PorcelainText.bodySm,
+                        color = mutedText,
+                    )
                 }
+            }
+        }
+
+        ui.error?.let {
+            Text(it, color = Porcelain.colors.warn, style = PorcelainText.body)
+        }
+
+        if (status != null) {
+            status.evBatteryPercent?.let { pct ->
+                BatteryMeter(percent = pct)
+            }
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
+                verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
+            ) {
+                status.rangeKm?.let {
+                    AnimatedStatTile(R.drawable.ic_pg_route, stringResource(R.string.home_range_value, it), stringResource(R.string.home_range))
+                }
+                status.twelveVoltPercent?.let {
+                    AnimatedStatTile(R.drawable.ic_pg_battery, "$it%", stringResource(R.string.home_twelve_volt))
+                }
+                AnimatedStatTile(
+                    icon = R.drawable.ic_pg_bolt,
+                    value = if (status.engineRunning) stringResource(R.string.state_on) else stringResource(R.string.state_off),
+                    label = stringResource(R.string.home_engine),
+                )
+            }
+            status.anyDoorOpen?.takeIf { it }?.let {
+                Text(stringResource(R.string.home_door_open), color = Porcelain.colors.warn, style = PorcelainText.body)
+            }
+        } else if (ui.loading) {
+            // First-ever load with nothing cached.
+            PgProgress()
+        }
+
+        parkedLabel?.let {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = PorcelainSpace.touchTarget)
+                    .clickable { openParkedInMaps(context, parkedLat, parkedLng, it) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
+            ) {
+                PgIcon(R.drawable.ic_pg_pin, contentDescription = null, size = 18.dp)
+                Text(stringResource(R.string.home_parked_near, it), style = PorcelainText.body, modifier = Modifier.weight(1f))
+                PgIcon(R.drawable.ic_pg_arrow_right, contentDescription = stringResource(R.string.cd_open_maps), size = 18.dp, tint = mutedText)
             }
         }
     }
 }
 
 @Composable
-private fun shimmerAlpha(): Float {
-    val t = rememberInfiniteTransition(label = "shimmer")
-    val a by t.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 0.55f,
-        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Reverse),
-        label = "shimmerAlpha",
-    )
-    return a
-}
-
-@Composable
-private fun SkeletonBar(onCard: Color) {
-    val a = shimmerAlpha()
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(18.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(onCard.copy(alpha = a * 0.35f)),
-    )
-}
-
-@Composable
-private fun SkeletonChip(onCard: Color) {
-    val a = shimmerAlpha()
-    Box(
-        Modifier
-            .size(width = 92.dp, height = 44.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(onCard.copy(alpha = a * 0.30f)),
-    )
-}
-
-@Composable
-private fun BatteryBar(percent: Int, onCard: Color) {
-    val fraction by animateFloatAsState(targetValue = (percent / 100f).coerceIn(0f, 1f), label = "battery")
-    val animatedPct by animateIntAsState(targetValue = percent, animationSpec = tween(700), label = "pct")
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun BatteryMeter(percent: Int) {
+    val animatedPct by animateIntAsState(targetValue = percent, animationSpec = tween(200), label = "pct")
+    Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(18.dp), tint = onCard)
-                Text(stringResource(R.string.home_drive_battery), style = MaterialTheme.typography.bodyMedium, color = onCard.copy(alpha = 0.85f))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                PgIcon(R.drawable.ic_pg_battery, contentDescription = null, size = 18.dp)
+                Text(stringResource(R.string.home_drive_battery), style = PorcelainText.body)
             }
-            Text("$animatedPct%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = onCard)
+            Text("$animatedPct%", style = PorcelainText.data.copy(fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.W500))
         }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(CircleShape)
-                .background(onCard.copy(alpha = 0.22f)),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fraction)
-                    .height(10.dp)
-                    .clip(CircleShape)
-                    .background(onCard),
-            )
-        }
+        SegmentMeter(value = percent, contentDescription = stringResource(R.string.home_battery_cd, percent))
     }
 }
 
 @Composable
-private fun HeroStatChip(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String,
-    onCard: Color,
-) {
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(onCard.copy(alpha = 0.16f))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = onCard)
-        Column {
-            AnimatedContent(
-                targetState = value,
-                transitionSpec = { fadeIn(tween(450)) togetherWith fadeOut(tween(450)) },
-                label = "chipValue",
-            ) { v ->
-                Text(
-                    v,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = onCard,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
-            Text(
-                label.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = onCard.copy(alpha = 0.75f),
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RefreshButton(loading: Boolean, onRefresh: () -> Unit, tint: Color = MaterialTheme.colorScheme.primary) {
-    if (loading) {
-        val transition = rememberInfiniteTransition(label = "spin")
-        val angle by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart),
-            label = "angle",
-        )
-        Icon(
-            Icons.Default.Refresh,
-            contentDescription = stringResource(R.string.home_refreshing_cd),
-            modifier = Modifier.rotate(angle).size(24.dp),
-            tint = tint,
-        )
-    } else {
-        IconButton(onClick = onRefresh) {
-            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.home_refresh_status), tint = tint)
-        }
+private fun AnimatedStatTile(icon: Int, value: String, label: String) {
+    AnimatedContent(
+        targetState = value,
+        transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+        label = "tileValue",
+    ) { v ->
+        StatTile(icon = icon, value = v, label = label)
     }
 }
 
 // ── Activity log ────────────────────────────────────────────────────
 @Composable
 private fun ActivityLogCard(log: List<LogEntry>) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Column(Modifier.padding(vertical = 6.dp)) {
-            if (log.isEmpty()) {
-                Text(
-                    stringResource(R.string.home_no_activity),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-                )
-            } else {
-                log.forEach { entry ->
-                    LogRow(entry)
-                }
+    PgCard(contentPadding = PaddingValues(horizontal = PorcelainSpace.s5, vertical = PorcelainSpace.s2), spacing = 0.dp) {
+        if (log.isEmpty()) {
+            Text(
+                stringResource(R.string.home_no_activity),
+                style = PorcelainText.body,
+                color = mutedText,
+                modifier = Modifier.padding(vertical = PorcelainSpace.s3),
+            )
+        } else {
+            log.forEachIndexed { i, entry ->
+                if (i > 0) Hairline()
+                LogRow(entry)
             }
         }
     }
@@ -938,57 +611,29 @@ private fun LogRow(entry: LogEntry, modifier: Modifier = Modifier) {
     val time = remember(entry.timestamp) {
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp))
     }
+    val c = Porcelain.colors
     val color = when (entry.level) {
-        LogLevel.SUCCESS -> MaterialTheme.colorScheme.primary
-        LogLevel.WARN -> MaterialTheme.colorScheme.tertiary
-        LogLevel.ERROR -> MaterialTheme.colorScheme.error
-        LogLevel.INFO -> MaterialTheme.colorScheme.onSurfaceVariant
+        LogLevel.SUCCESS -> c.teal
+        LogLevel.WARN -> c.signal
+        LogLevel.ERROR -> c.danger
+        LogLevel.INFO -> c.lineStrong
     }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(vertical = PorcelainSpace.s2),
+        horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s3),
+        verticalAlignment = Alignment.Top,
     ) {
         Box(
             Modifier
-                .size(8.dp)
-                .clip(CircleShape)
+                .padding(top = 7.dp)
+                .size(6.dp)
                 .background(color),
         )
-        Text(time, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(entry.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text(time, style = PorcelainText.data, color = mutedText)
+        Text(entry.message, style = PorcelainText.body, modifier = Modifier.weight(1f))
     }
-}
-
-@Composable
-private fun Badge(text: String, contentColor: Color) {
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(50))
-            .background(contentColor.copy(alpha = 0.16f))
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-    ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = contentColor)
-    }
-}
-
-@Composable
-private fun PulsingDot(color: Color) {
-    val transition = rememberInfiniteTransition(label = "pulse")
-    val alpha by transition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse),
-        label = "pulseAlpha",
-    )
-    Box(
-        Modifier
-            .size(12.dp)
-            .clip(CircleShape)
-            .background(color.copy(alpha = alpha)),
-    )
 }
 
 private fun relativeTime(epochMs: Long, now: Long, context: android.content.Context): String {

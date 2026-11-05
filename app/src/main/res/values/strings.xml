@@ -107,6 +107,9 @@
     <string name="home_pin_label">PIN</string>
     <string name="home_system_status">SYSTEM STATUS</string>
     <string name="home_watching">Watching</string>
+    <string name="home_switch_cd">LEAVE/LOCK on</string>
+    <string name="home_meter_busy">Working</string>
+    <string name="home_battery_cd">Drive battery %1$d%%</string>
     <string name="home_off">Off</string>
     <string name="home_no_vehicle">No vehicle selected</string>
     <string name="home_state_idle">Idle — waiting for you to leave the car.</string>
