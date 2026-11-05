@@ -111,8 +111,9 @@ A new look lives in `design/` (tokens, Compose theme, fonts, icons, brand marks)
   is a deliberate change: copy `design/android/theme/*.kt` to `ui/theme/porcelain/`, the fonts to
   `res/font/`, the `ic_launcher_*` drawables over the current ones, use `PorcelainTheme` with
   dynamic colour off and the user's System/Light/Dark choice, then update §2 in this file.
-- Open question before adopting: the design uses the name **LEAVE/LOCK**; the app and repo are
-  currently **Leave-N-Lock**.
+- Decided 2026-11-05: when adopted, the user-facing name becomes **LEAVE/LOCK** (app label,
+  screens, notifications, README). Repo name and app ID stay. Adoption happens **after** the
+  first Dry-run testing on the car, so redesign issues and logic issues stay separate.
 - UI rules in short: tokens only (no raw hex); cards chamfered top-right (16dp, 24dp hero), 4dp
   max radius elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows or heavy
   shadows; 48dp touch targets; short, factual, sentence-case copy.
