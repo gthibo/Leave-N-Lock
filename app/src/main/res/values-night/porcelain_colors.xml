@@ -2,11 +2,11 @@
 <!-- Porcelain Grid colours (generated). For XML-only places: widget, notification, splash. -->
 <resources>
     <color name="pg_surface">#141719</color>
-    <color name="pg_surface_raised">#1C2023</color>
+    <color name="pg_surface_raised">#23282C</color>
     <color name="pg_surface_sunken">#0F1113</color>
     <color name="pg_silver">#6B7377</color>
     <color name="pg_silver_soft">#2A3034</color>
-    <color name="pg_line">#2C3236</color>
+    <color name="pg_line">#353C41</color>
     <color name="pg_line_strong">#687075</color>
     <color name="pg_ink">#E6E9E8</color>
     <color name="pg_ink_muted">#A1A9AC</color>
@@ -28,7 +28,7 @@
     <color name="pg_warn">#E0B04F</color>
     <color name="pg_danger">#F08A78</color>
     <color name="pg_on_danger">#1A0D0B</color>
-    <color name="pg_tonal">#343C41</color>
+    <color name="pg_tonal">#3A4348</color>
     <color name="pg_mark_hi">#D7E4E3</color>
     <color name="pg_mark_lo">#8FA7AB</color>
     <color name="pg_mark_rune">#1C2023</color>

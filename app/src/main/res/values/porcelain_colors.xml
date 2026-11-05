@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Porcelain Grid colours (generated). For XML-only places: widget, notification, splash. -->
 <resources>
-    <color name="pg_surface">#F3F4F1</color>
+    <color name="pg_surface">#E6E8E5</color>
     <color name="pg_surface_raised">#FBFBFA</color>
-    <color name="pg_surface_sunken">#E9EBE8</color>
+    <color name="pg_surface_sunken">#DADDDA</color>
     <color name="pg_silver">#C9CED0</color>
     <color name="pg_silver_soft">#DEE2E3</color>
-    <color name="pg_line">#D3D8D9</color>
+    <color name="pg_line">#CFD4D5</color>
     <color name="pg_line_strong">#80888C</color>
     <color name="pg_ink">#23272A</color>
     <color name="pg_ink_muted">#565E62</color>

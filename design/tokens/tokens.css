@@ -1,11 +1,11 @@
 /* Porcelain Grid tokens for the web. Copied from the design system; do not edit by hand. */
 :root, [data-theme="light"] {
-  --surface: #f3f4f1; /* Page ground. Porcelain white in light, graphite night in dark. Most of every screen is this colour. */
+  --surface: #e6e8e5; /* Page ground. Porcelain white in light, graphite night in dark. Most of every screen is this colour. */
   --surface-raised: #fbfbfa; /* Panels, inputs and menus that sit on surface. Separate it with a hairline, never a shadow. */
-  --surface-sunken: #e9ebe8; /* Wells: switch tracks, empty meter segments, table header rows. */
+  --surface-sunken: #daddda; /* Wells: switch tracks, empty meter segments, table header rows. */
   --silver: #c9ced0; /* Cool silver as a material: large blocks, inactive pixels, illustration planes. Never text. */
   --silver-soft: #dee2e3; /* Quiet fills behind neutral labels and selected table rows. */
-  --line: #d3d8d9; /* Hairline dividers and panel edges at stroke-hairline. Decorative only; it does not need 3:1. */
+  --line: #cfd4d5; /* Hairline dividers and panel edges at stroke-hairline. Decorative only; it does not need 3:1. */
   --line-strong: #80888c; /* Borders of controls that carry meaning (inputs, secondary buttons, switch tracks): 3:1 or more on surface and surface-raised in both themes. */
   --ink: #23272a; /* Primary text and icons on surface, surface-raised, surface-sunken and teal-soft. 12:1 or more in both themes. */
   --ink-muted: #565e62; /* Secondary text, captions, units and mono labels on any surface or teal-soft. 5.3:1 or more in both themes. */
@@ -27,7 +27,7 @@
   --warn: #8a5a00; /* Caution states (low range, cable unlocked). Always with a word. Text on surface and surface-raised. */
   --danger: #a33a2b; /* Faults and destructive or risky actions (Unlock now). Always with a word or icon. Text on surface and surface-raised; as a fill, with on-danger. */
   --on-danger: #ffffff; /* Label on a danger fill (Unlock now). */
-  --tonal: #dee2e3; /* A fill, not text: tonal buttons (Reload vehicles) and stat tiles. Their labels are ink, which reads 11.5:1 on tonal in light and 9.2:1 in dark. In dark it is lifted to #343c41 so a tonal button separates from surface-raised. */
+  --tonal: #dee2e3; /* A fill, not text: tonal buttons (Reload vehicles) and stat tiles. Their labels are ink, which reads 11.5:1 on tonal in light and 9.2:1 in dark. In dark it is lifted to #3a4348 so a tonal button separates from surface-raised. */
   --mark-hi: #5b686e; /* The lit facet of the LEAVE/LOCK mark: gunmetal on Porcelain, satin silver on Graphite. Mark only. */
   --mark-lo: #2e3337; /* The shaded facet, signal arcs and dissolving pixels of the mark. Mark only. */
   --mark-rune: #f3f4f1; /* The Bluetooth rune cut into the mark's body. Mark only. */
@@ -35,11 +35,11 @@
 }
 [data-theme="dark"] {
   --surface: #141719;
-  --surface-raised: #1c2023;
+  --surface-raised: #23282c;
   --surface-sunken: #0f1113;
   --silver: #6b7377;
   --silver-soft: #2a3034;
-  --line: #2c3236;
+  --line: #353c41;
   --line-strong: #687075;
   --ink: #e6e9e8;
   --ink-muted: #a1a9ac;
@@ -61,7 +61,7 @@
   --warn: #e0b04f;
   --danger: #f08a78;
   --on-danger: #1a0d0b;
-  --tonal: #343c41;
+  --tonal: #3a4348;
   --mark-hi: #d7e4e3;
   --mark-lo: #8fa7ab;
   --mark-rune: #1c2023;

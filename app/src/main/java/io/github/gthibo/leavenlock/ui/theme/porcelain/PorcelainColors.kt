@@ -49,12 +49,12 @@ data class PorcelainColors(
 
 /** Porcelain (light) theme. */
 val PorcelainLight = PorcelainColors(
-    surface = Color(0xFFF3F4F1),
+    surface = Color(0xFFE6E8E5),
     surfaceRaised = Color(0xFFFBFBFA),
-    surfaceSunken = Color(0xFFE9EBE8),
+    surfaceSunken = Color(0xFFDADDDA),
     silver = Color(0xFFC9CED0),
     silverSoft = Color(0xFFDEE2E3),
-    line = Color(0xFFD3D8D9),
+    line = Color(0xFFCFD4D5),
     lineStrong = Color(0xFF80888C),
     ink = Color(0xFF23272A),
     inkMuted = Color(0xFF565E62),
@@ -85,11 +85,11 @@ val PorcelainLight = PorcelainColors(
 /** Graphite (dark) theme. */
 val PorcelainDark = PorcelainColors(
     surface = Color(0xFF141719),
-    surfaceRaised = Color(0xFF1C2023),
+    surfaceRaised = Color(0xFF23282C),
     surfaceSunken = Color(0xFF0F1113),
     silver = Color(0xFF6B7377),
     silverSoft = Color(0xFF2A3034),
-    line = Color(0xFF2C3236),
+    line = Color(0xFF353C41),
     lineStrong = Color(0xFF687075),
     ink = Color(0xFFE6E9E8),
     inkMuted = Color(0xFFA1A9AC),
@@ -111,7 +111,7 @@ val PorcelainDark = PorcelainColors(
     warn = Color(0xFFE0B04F),
     danger = Color(0xFFF08A78),
     onDanger = Color(0xFF1A0D0B),
-    tonal = Color(0xFF343C41),
+    tonal = Color(0xFF3A4348),
     markHi = Color(0xFFD7E4E3),
     markLo = Color(0xFF8FA7AB),
     markRune = Color(0xFF1C2023),
