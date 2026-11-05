@@ -53,6 +53,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -129,6 +130,18 @@ fun PgIconButton(
     ) {
         PgIcon(res, contentDescription, size = size, tint = LocalContentColor.current)
     }
+}
+
+/**
+ * Pulls a 48dp control into a card's top-right padding (the design's `margin: -12px -12px 0 0`),
+ * so a header action lines up with the eyebrow without making the header taller.
+ */
+fun Modifier.cornerBleed(bleed: Dp = 12.dp): Modifier = layout { measurable, constraints ->
+    val p = measurable.measure(constraints)
+    val b = bleed.roundToPx()
+    val w = (p.width - b).coerceAtLeast(0)
+    val h = (p.height - 2 * b).coerceAtLeast(0)
+    layout(w, h) { p.place(0, -b) }
 }
 
 // ── Text bits ───────────────────────────────────────────────────────

@@ -74,6 +74,7 @@ import io.github.gthibo.leavenlock.ui.components.PgSwitch
 import io.github.gthibo.leavenlock.ui.components.PgTopBar
 import io.github.gthibo.leavenlock.ui.components.SegmentMeter
 import io.github.gthibo.leavenlock.ui.components.StatTile
+import io.github.gthibo.leavenlock.ui.components.cornerBleed
 import io.github.gthibo.leavenlock.ui.components.mutedText
 import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainShape
@@ -462,7 +463,7 @@ private fun VehicleStatusCard(
                 onRefresh,
                 enabled = !ui.loading,
                 size = 22.dp,
-                modifier = Modifier.padding(start = 0.dp).size(PorcelainSpace.touchTarget),
+                modifier = Modifier.cornerBleed(),
             )
         },
     ) {
