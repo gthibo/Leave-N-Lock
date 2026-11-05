@@ -7,57 +7,48 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.data.settings.NotificationField
 import io.github.gthibo.leavenlock.data.settings.RunMode
 import io.github.gthibo.leavenlock.data.settings.ThemeMode
-import io.github.gthibo.leavenlock.ui.components.HeroBanner
-import io.github.gthibo.leavenlock.ui.theme.ambientBackground
+import io.github.gthibo.leavenlock.ui.components.ButtonVariant
+import io.github.gthibo.leavenlock.ui.components.CardTone
+import io.github.gthibo.leavenlock.ui.components.IconWell
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.PgChoiceRow
+import io.github.gthibo.leavenlock.ui.components.PgProgress
+import io.github.gthibo.leavenlock.ui.components.PgRadio
+import io.github.gthibo.leavenlock.ui.components.PgSlider
+import io.github.gthibo.leavenlock.ui.components.PgTopBar
+import io.github.gthibo.leavenlock.ui.components.SwitchRow
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,33 +88,29 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(ambientBackground()),
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Porcelain.colors.surface,
+        topBar = { PgTopBar(title = stringResource(R.string.settings_title), onBack = onBack) },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(start = PorcelainSpace.screenMargin, end = PorcelainSpace.screenMargin, top = PorcelainSpace.s1, bottom = PorcelainSpace.s6),
+            verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s4),
         ) {
-            HeroBanner(
-                title = stringResource(R.string.settings_title),
-                subtitle = stringResource(R.string.settings_hero_subtitle),
-                icon = Icons.Default.Tune,
+            PgCard(
+                tone = CardTone.Hero,
+                cut = 24.dp,
                 eyebrow = stringResource(R.string.settings_hero_eyebrow),
-            )
+                pixels = listOf("w.w", "ddw", "w.m"),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s4)) {
+                    IconWell(R.drawable.ic_pg_sliders, size = 48.dp, iconSize = 24.dp)
+                    Text(stringResource(R.string.settings_title), style = PorcelainText.status.copy(fontSize = 28.sp, lineHeight = 34.sp))
+                }
+                Text(stringResource(R.string.settings_hero_subtitle), style = PorcelainText.body, color = mutedText)
+            }
 
             // Safety / run mode.
             Section(stringResource(R.string.sec_safety)) {
@@ -132,14 +119,21 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.set_demo_sub),
                     checked = settings.demoMode,
                     onCheckedChange = viewModel::setDemoMode,
+                    first = true,
                 )
-                Text(stringResource(R.string.set_locking_behaviour), fontWeight = FontWeight.Medium)
-                RunModeOption(stringResource(R.string.set_dry_run), settings.runMode == RunMode.DRY_RUN) {
-                    viewModel.setRunMode(RunMode.DRY_RUN)
-                }
-                RunModeOption(stringResource(R.string.set_armed), settings.runMode == RunMode.ARMED) {
-                    viewModel.setRunMode(RunMode.ARMED)
-                }
+                GroupTitle(stringResource(R.string.set_locking_behaviour))
+                PgRadio(
+                    label = stringResource(R.string.set_dry_run),
+                    hint = stringResource(R.string.set_dry_run_hint),
+                    selected = settings.runMode == RunMode.DRY_RUN,
+                    onClick = { viewModel.setRunMode(RunMode.DRY_RUN) },
+                )
+                PgRadio(
+                    label = stringResource(R.string.set_armed),
+                    hint = stringResource(R.string.set_armed_hint),
+                    selected = settings.runMode == RunMode.ARMED,
+                    onClick = { viewModel.setRunMode(RunMode.ARMED) },
+                )
                 RowToggle(
                     title = stringResource(R.string.set_confirm_title),
                     subtitle = stringResource(R.string.set_confirm_sub),
@@ -150,32 +144,33 @@ fun SettingsScreen(
 
             // Account.
             Section(stringResource(R.string.sec_account)) {
-                Text(settings.accountEmail ?: stringResource(R.string.set_not_signed_in), fontWeight = FontWeight.Medium)
+                Text(settings.accountEmail ?: stringResource(R.string.set_not_signed_in), style = PorcelainText.body)
                 // Tie the buttons to the same signal as the email above so they never disagree.
                 val signedIn = extras.signedIn || settings.accountEmail != null
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (signedIn) {
-                        OutlinedButton(onClick = viewModel::signOut) { Text(stringResource(R.string.set_sign_out)) }
-                        Button(onClick = viewModel::loadVehicles) { Text(stringResource(R.string.set_reload_vehicles)) }
-                    } else {
-                        Button(onClick = onLogin) { Text(stringResource(R.string.action_sign_in)) }
-                    }
-                }
                 if (signedIn) {
-                    OutlinedButton(
-                        onClick = viewModel::checkCredentials,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.set_check_creds)) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        PgButton(stringResource(R.string.set_sign_out), viewModel::signOut, Modifier.weight(1f), ButtonVariant.Secondary)
+                        PgButton(stringResource(R.string.set_reload_vehicles), viewModel::loadVehicles, Modifier.weight(1f), ButtonVariant.Tonal)
+                    }
+                    PgButton(
+                        stringResource(R.string.set_check_creds),
+                        viewModel::checkCredentials,
+                        Modifier.fillMaxWidth(),
+                        ButtonVariant.Tonal,
+                        icon = R.drawable.ic_pg_refresh,
+                    )
+                } else {
+                    PgButton(stringResource(R.string.action_sign_in), onLogin, Modifier.fillMaxWidth())
                 }
             }
 
             // Vehicle.
             Section(stringResource(R.string.sec_vehicle)) {
                 if (extras.loadingVehicles) {
-                    CircularProgressIndicator()
+                    PgProgress()
                 } else if (extras.vehicles.isEmpty()) {
-                    Text(stringResource(R.string.set_no_vehicles), style = MaterialTheme.typography.bodyMedium)
-                    OutlinedButton(onClick = viewModel::loadVehicles) { Text(stringResource(R.string.set_load_vehicles)) }
+                    Text(stringResource(R.string.set_no_vehicles), style = PorcelainText.body, color = mutedText)
+                    PgButton(stringResource(R.string.set_load_vehicles), viewModel::loadVehicles, Modifier.fillMaxWidth(), ButtonVariant.Tonal, icon = R.drawable.ic_pg_car)
                 } else {
                     extras.vehicles.forEach { v ->
                         SelectableRow(
@@ -192,9 +187,9 @@ fun SettingsScreen(
             Section(stringResource(R.string.sec_car_bt)) {
                 Text(
                     settings.carBluetoothName?.let { stringResource(R.string.set_car_bt_selected, it) } ?: stringResource(R.string.set_car_bt_pick),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PorcelainText.body,
                 )
-                OutlinedButton(onClick = viewModel::refreshDevices) { Text(stringResource(R.string.set_refresh_devices)) }
+                PgButton(stringResource(R.string.set_refresh_devices), viewModel::refreshDevices, Modifier.fillMaxWidth(), ButtonVariant.Tonal, icon = R.drawable.ic_pg_bluetooth)
                 extras.pairedDevices.forEach { d ->
                     SelectableRow(
                         title = d.name,
@@ -212,6 +207,7 @@ fun SettingsScreen(
                     stringResource(R.string.set_det_bt_sub),
                     settings.useBluetoothTrigger,
                     viewModel::setUseBluetooth,
+                    first = true,
                 )
                 RowToggle(
                     stringResource(R.string.set_det_activity_title),
@@ -226,8 +222,8 @@ fun SettingsScreen(
                     viewModel::setUseGeofence,
                 )
                 if (settings.useGeofence) {
-                    Text(stringResource(R.string.set_geo_radius, settings.geofenceRadiusMeters))
-                    Slider(
+                    PgSlider(
+                        label = stringResource(R.string.set_geo_radius, settings.geofenceRadiusMeters),
                         value = settings.geofenceRadiusMeters.toFloat(),
                         onValueChange = { viewModel.setGeofenceRadius(it.toInt()) },
                         valueRange = 10f..100f,
@@ -248,6 +244,7 @@ fun SettingsScreen(
                     stringResource(R.string.set_verify_lock_sub),
                     settings.verifyLock,
                     viewModel::setVerifyLock,
+                    first = true,
                 )
                 RowToggle(
                     stringResource(R.string.set_dont_lock_open_title),
@@ -261,19 +258,13 @@ fun SettingsScreen(
                     settings.departureSummary,
                     viewModel::setDepartureSummary,
                 )
-                Text(
-                    if (settings.retryWindowMinutes == 0) {
+                PgSlider(
+                    label = if (settings.retryWindowMinutes == 0) {
                         stringResource(R.string.set_retry_window_off)
                     } else {
                         stringResource(R.string.set_retry_window_value, settings.retryWindowMinutes)
                     },
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    stringResource(R.string.set_retry_window_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Slider(
+                    description = stringResource(R.string.set_retry_window_sub),
                     value = settings.retryWindowMinutes.toFloat(),
                     onValueChange = { viewModel.setRetryWindowMinutes(it.toInt()) },
                     valueRange = 0f..15f,
@@ -283,19 +274,17 @@ fun SettingsScreen(
 
             // Timing.
             Section(stringResource(R.string.sec_timing)) {
-                Text(stringResource(R.string.set_grace, settings.graceSeconds))
-                Slider(
+                PgSlider(
+                    label = stringResource(R.string.set_grace, settings.graceSeconds),
                     value = settings.graceSeconds.toFloat(),
                     onValueChange = { viewModel.setGrace(it.toInt()) },
                     valueRange = 5f..180f,
                 )
-                Text(stringResource(R.string.set_min_refresh_title), fontWeight = FontWeight.Medium)
-                Text(
-                    stringResource(R.string.set_min_refresh_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(stringResource(R.string.set_min_refresh_value, formatDuration(settings.minRefreshSeconds)))
-                Slider(
+                PgSlider(
+                    label = stringResource(R.string.set_min_refresh_title),
+                    valueText = formatDuration(settings.minRefreshSeconds),
+                    description = stringResource(R.string.set_min_refresh_sub) + "\n" +
+                        stringResource(R.string.set_min_refresh_value, formatDuration(settings.minRefreshSeconds)),
                     value = settings.minRefreshSeconds.toFloat(),
                     onValueChange = { viewModel.setMinRefreshSeconds(it.toInt()) },
                     valueRange = 15f..600f,
@@ -303,8 +292,8 @@ fun SettingsScreen(
                 if (settings.minRefreshSeconds < 60) {
                     Text(
                         stringResource(R.string.set_min_refresh_warn),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        style = PorcelainText.bodySm,
+                        color = Porcelain.colors.warn,
                     )
                 }
             }
@@ -316,10 +305,11 @@ fun SettingsScreen(
                     stringResource(R.string.set_low_volt_sub),
                     settings.lowVoltageAlert,
                     viewModel::setLowVoltageAlert,
+                    first = true,
                 )
                 if (settings.lowVoltageAlert) {
-                    Text(stringResource(R.string.set_low_volt_threshold, settings.lowVoltageThreshold))
-                    Slider(
+                    PgSlider(
+                        label = stringResource(R.string.set_low_volt_threshold, settings.lowVoltageThreshold),
                         value = settings.lowVoltageThreshold.toFloat(),
                         onValueChange = { viewModel.setLowVoltageThreshold(it.toInt()) },
                         valueRange = 10f..90f,
@@ -334,26 +324,19 @@ fun SettingsScreen(
                     stringResource(R.string.set_auto_refresh_open_sub),
                     settings.autoRefreshOnOpen,
                     viewModel::setAutoRefreshOnOpen,
+                    first = true,
                 )
-                Text(stringResource(R.string.set_bg_check_title), fontWeight = FontWeight.Medium)
-                Text(
-                    stringResource(R.string.set_bg_check_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(
+                GroupTitle(stringResource(R.string.set_bg_check_title), stringResource(R.string.set_bg_check_sub))
+                PgChoiceRow(
+                    options = listOf(
                         0 to stringResource(R.string.set_off),
                         15 to stringResource(R.string.set_15m),
                         30 to stringResource(R.string.set_30m),
                         60 to stringResource(R.string.set_60m),
-                    ).forEach { (mins, label) ->
-                        FilterChip(
-                            selected = settings.autoRefreshIntervalMinutes == mins,
-                            onClick = { viewModel.setAutoRefreshInterval(mins) },
-                            label = { Text(label) },
-                        )
-                    }
-                }
+                    ),
+                    selected = settings.autoRefreshIntervalMinutes,
+                    onSelect = viewModel::setAutoRefreshInterval,
+                )
                 RowToggle(
                     stringResource(R.string.set_vibrate_title),
                     stringResource(R.string.set_vibrate_sub),
@@ -376,10 +359,11 @@ fun SettingsScreen(
                     }
                     Text(
                         stringResource(R.string.set_sound_current, soundLabel ?: stringResource(R.string.set_sound_default)),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PorcelainText.bodySm,
+                        color = mutedText,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        PgButton(stringResource(R.string.set_sound_choose), modifier = Modifier.weight(1f), variant = ButtonVariant.Tonal, onClick = {
                             val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, context.getString(R.string.set_sound_pick_title))
@@ -390,20 +374,14 @@ fun SettingsScreen(
                                 }
                             }
                             soundPicker.launch(intent)
-                        }) { Text(stringResource(R.string.set_sound_choose)) }
+                        })
                         if (settings.customLockSoundUri != null) {
-                            OutlinedButton(onClick = { viewModel.setCustomLockSoundUri(null) }) {
-                                Text(stringResource(R.string.set_sound_use_default))
-                            }
+                            PgButton(stringResource(R.string.set_sound_use_default), { viewModel.setCustomLockSoundUri(null) }, Modifier.weight(1f), ButtonVariant.Secondary)
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { viewModel.testLockSound() }) {
-                            Text(stringResource(R.string.set_sound_test))
-                        }
-                        OutlinedButton(onClick = { viewModel.playDefaultSound() }) {
-                            Text(stringResource(R.string.set_sound_play_default))
-                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        PgButton(stringResource(R.string.set_sound_test), { viewModel.testLockSound() }, Modifier.weight(1f), ButtonVariant.Tonal)
+                        PgButton(stringResource(R.string.set_sound_play_default), { viewModel.playDefaultSound() }, Modifier.weight(1f), ButtonVariant.Secondary)
                     }
                 }
                 RowToggle(
@@ -421,16 +399,17 @@ fun SettingsScreen(
                     stringResource(R.string.schedule_enabled_sub),
                     settings.scheduleEnabled,
                     viewModel::setScheduleEnabled,
+                    first = true,
                 )
                 if (settings.scheduleEnabled) {
-                    Text(stringResource(R.string.schedule_from, formatMinutes(settings.scheduleStartMinutes)))
-                    Slider(
+                    PgSlider(
+                        label = stringResource(R.string.schedule_from, formatMinutes(settings.scheduleStartMinutes)),
                         value = settings.scheduleStartMinutes.toFloat(),
                         onValueChange = { viewModel.setScheduleStart((it / 15).toInt() * 15) },
                         valueRange = 0f..1425f,
                     )
-                    Text(stringResource(R.string.schedule_until, formatMinutes(settings.scheduleEndMinutes)))
-                    Slider(
+                    PgSlider(
+                        label = stringResource(R.string.schedule_until, formatMinutes(settings.scheduleEndMinutes)),
                         value = settings.scheduleEndMinutes.toFloat(),
                         onValueChange = { viewModel.setScheduleEnd((it / 15).toInt() * 15) },
                         valueRange = 0f..1425f,
@@ -445,6 +424,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.set_pin_sub),
                     checked = settings.pinNotification,
                     onCheckedChange = viewModel::setPinNotification,
+                    first = true,
                 )
                 RowToggle(
                     title = stringResource(R.string.set_badge_title),
@@ -471,111 +451,80 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::setShowStatusInNotification,
                 )
                 if (settings.showStatusInNotification) {
-                    Text(stringResource(R.string.set_show_details), fontWeight = FontWeight.Medium)
+                    GroupTitle(stringResource(R.string.set_show_details))
                     NotificationField.entries.forEach { field ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(stringResource(field.labelRes))
-                            Switch(
-                                checked = field in settings.notificationFields,
-                                onCheckedChange = { viewModel.toggleNotificationField(field, it) },
-                            )
-                        }
+                        SwitchRow(
+                            title = stringResource(field.labelRes),
+                            description = null,
+                            checked = field in settings.notificationFields,
+                            onCheckedChange = { viewModel.toggleNotificationField(field, it) },
+                        )
                     }
                 }
             }
 
             // Appearance.
             Section(stringResource(R.string.sec_appearance)) {
-                Text(stringResource(R.string.set_theme), fontWeight = FontWeight.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ThemeMode.entries.forEach { mode ->
-                        FilterChip(
-                            selected = settings.themeMode == mode,
-                            onClick = { viewModel.setThemeMode(mode) },
-                            label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                        )
-                    }
+                GroupTitle(stringResource(R.string.set_theme))
+                ThemeMode.entries.forEach { mode ->
+                    PgRadio(
+                        label = stringResource(
+                            when (mode) {
+                                ThemeMode.SYSTEM -> R.string.set_theme_system
+                                ThemeMode.LIGHT -> R.string.set_theme_light
+                                ThemeMode.DARK -> R.string.set_theme_dark
+                            },
+                        ),
+                        selected = settings.themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode) },
+                    )
                 }
             }
 
             // Keep running.
             Section(stringResource(R.string.sec_keep_running)) {
-                Text(
-                    stringResource(R.string.set_keep_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    stringResource(R.string.set_keep_tips),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = { openBatterySettings(context) }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.set_battery_settings))
-                    }
-                    OutlinedButton(onClick = { openAppInfo(context) }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.set_app_info))
-                    }
+                Text(stringResource(R.string.set_keep_intro), style = PorcelainText.body)
+                Text(stringResource(R.string.set_keep_tips), style = PorcelainText.bodySm, color = mutedText)
+                Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                    PgButton(stringResource(R.string.set_battery_settings), { openBatterySettings(context) }, Modifier.weight(1f), ButtonVariant.Tonal)
+                    PgButton(stringResource(R.string.set_app_info), { openAppInfo(context) }, Modifier.weight(1f), ButtonVariant.Secondary)
                 }
             }
 
             // Diagnostics.
             Section(stringResource(R.string.sec_diagnostics)) {
-                Text(
-                    stringResource(R.string.set_diag_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Button(onClick = onStats, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.set_open_stats))
-                }
+                Text(stringResource(R.string.set_diag_intro), style = PorcelainText.body)
+                PgButton(stringResource(R.string.set_open_stats), onStats, Modifier.fillMaxWidth(), ButtonVariant.Tonal)
             }
 
             // Help.
             Section(stringResource(R.string.sec_help)) {
-                Text(
-                    stringResource(R.string.set_help_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                OutlinedButton(onClick = onHelp, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.set_open_help))
-                }
+                Text(stringResource(R.string.set_help_intro), style = PorcelainText.body)
+                PgButton(stringResource(R.string.set_open_help), onHelp, Modifier.fillMaxWidth(), ButtonVariant.Secondary)
             }
 
             // About.
             Section(stringResource(R.string.sec_about)) {
-                Text(
-                    stringResource(R.string.set_about_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                OutlinedButton(onClick = onAbout, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.set_open_about))
-                }
+                Text(stringResource(R.string.set_about_intro), style = PorcelainText.body)
+                PgButton(stringResource(R.string.set_open_about), onAbout, Modifier.fillMaxWidth(), ButtonVariant.Secondary)
             }
 
             // Backup & restore.
             Section(stringResource(R.string.sec_backup)) {
-                Text(
-                    stringResource(R.string.set_backup_intro),
-                    style = MaterialTheme.typography.bodyMedium,
+                Text(stringResource(R.string.set_backup_intro), style = PorcelainText.body)
+                PgButton(stringResource(R.string.set_backup_export_app), viewModel::exportToAppFolder, Modifier.fillMaxWidth(), ButtonVariant.Tonal)
+                PgButton(
+                    stringResource(R.string.set_backup_export_custom),
+                    { exportPicker.launch(viewModel.suggestedBackupFileName()) },
+                    Modifier.fillMaxWidth(),
+                    ButtonVariant.Secondary,
                 )
-                Button(onClick = viewModel::exportToAppFolder, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.set_backup_export_app))
-                }
-                OutlinedButton(
-                    onClick = { exportPicker.launch(viewModel.suggestedBackupFileName()) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.set_backup_export_custom))
-                }
-                OutlinedButton(
-                    onClick = { restorePicker.launch(arrayOf("application/json", "application/octet-stream", "text/*")) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.set_backup_restore))
-                }
+                PgButton(
+                    stringResource(R.string.set_backup_restore),
+                    { restorePicker.launch(arrayOf("application/json", "application/octet-stream", "text/*")) },
+                    Modifier.fillMaxWidth(),
+                    ButtonVariant.Secondary,
+                )
             }
         }
     }
@@ -583,11 +532,15 @@ fun SettingsScreen(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            content()
-        }
+    PgCard(title = title, spacing = PorcelainSpace.s2) { content() }
+}
+
+/** A bold sub-heading inside a section, with an optional muted line under it. */
+@Composable
+private fun GroupTitle(title: String, subtitle: String? = null) {
+    Column(Modifier.fillMaxWidth().padding(top = PorcelainSpace.s2)) {
+        Text(title, style = PorcelainText.bodyStrong)
+        subtitle?.let { Text(it, style = PorcelainText.body.copy(fontSize = 14.sp, lineHeight = 20.sp), color = mutedText) }
     }
 }
 
@@ -600,7 +553,7 @@ private fun formatDuration(seconds: Int): String = when {
     else -> "${seconds / 60}m ${seconds % 60}s"
 }
 
-/** Opens the system battery-optimization list so the user can exempt AutoLock. */
+/** Opens the system battery-optimization list so the user can exempt LEAVE/LOCK. */
 private fun openBatterySettings(context: Context) {
     val opened = runCatching {
         context.startActivity(
@@ -629,41 +582,12 @@ private fun RowToggle(
     subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    first: Boolean = false,
 ) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Medium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun RunModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Text(label)
-    }
+    SwitchRow(title, subtitle, checked, onCheckedChange, divider = !first)
 }
 
 @Composable
 private fun SelectableRow(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Column {
-            Text(title, fontWeight = FontWeight.Medium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
-        }
-    }
+    PgRadio(label = title, hint = subtitle, selected = selected, onClick = onClick)
 }

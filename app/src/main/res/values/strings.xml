@@ -169,8 +169,10 @@
     <string name="set_demo_title">Demo mode</string>
     <string name="set_demo_sub">Use a simulated car — no account needed.</string>
     <string name="set_locking_behaviour">Locking behaviour</string>
-    <string name="set_dry_run">Dry run (never sends a real lock)</string>
-    <string name="set_armed">Armed (locks for real)</string>
+    <string name="set_dry_run">Dry run</string>
+    <string name="set_dry_run_hint">Never sends a real lock</string>
+    <string name="set_armed">Armed</string>
+    <string name="set_armed_hint">Locks the car for real</string>
     <string name="set_confirm_title">Confirm before locking</string>
     <string name="set_confirm_sub">Ask via notification instead of locking automatically.</string>
     <string name="set_not_signed_in">Not signed in</string>
@@ -258,6 +260,9 @@
     <string name="set_showstatus_sub">Add a live status line to the ongoing notification.</string>
     <string name="set_show_details">Show these details:</string>
     <string name="set_theme">Theme</string>
+    <string name="set_theme_system">System default</string>
+    <string name="set_theme_light">Light</string>
+    <string name="set_theme_dark">Dark</string>
     <string name="set_keep_intro">Phones aggressively kill background apps. So auto-locking fires reliably:</string>
     <string name="set_keep_tips">• Allow unrestricted / unmonitored battery use\n• Remove any \"restrict background\" limit\n• Keep Leave-N-Lock\'s notifications enabled\n• On Samsung/Xiaomi/Huawei, add Leave-N-Lock to \"never sleeping apps\"</string>
     <string name="set_battery_settings">Battery settings</string>
