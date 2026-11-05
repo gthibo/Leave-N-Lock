@@ -2,25 +2,32 @@ package io.github.gthibo.leavenlock.ui.permissions
 
 import android.Manifest
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.gthibo.leavenlock.R
+import io.github.gthibo.leavenlock.ui.components.CardTone
+import io.github.gthibo.leavenlock.ui.components.IconWell
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 /**
- * Gate that requests the runtime permissions AutoLock needs, then shows [content].
+ * Gate that requests the runtime permissions LEAVE/LOCK needs, then shows [content].
  * Background location + activity recognition are requested contextually.
  */
 @OptIn(ExperimentalPermissionsApi::class)
@@ -47,23 +54,26 @@ fun PermissionGate(content: @Composable () -> Unit) {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .background(Porcelain.colors.surface)
+                .safeDrawingPadding()
+                .padding(PorcelainSpace.screenMargin),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                stringResource(R.string.perm_title),
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(R.string.perm_body),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(vertical = 16.dp),
-            )
-            Button(onClick = { state.launchMultiplePermissionRequest() }) {
-                Text(stringResource(R.string.perm_grant))
+            PgCard(
+                tone = CardTone.Hero,
+                cut = 24.dp,
+                eyebrow = stringResource(R.string.app_name),
+                pixels = listOf("w.w", ".d.", "w.m"),
+            ) {
+                IconWell(R.drawable.ic_pg_lock, size = 48.dp, iconSize = 24.dp)
+                Text(stringResource(R.string.perm_title), style = PorcelainText.heading1)
+                Text(stringResource(R.string.perm_body), style = PorcelainText.body, color = mutedText)
             }
+            PgButton(
+                text = stringResource(R.string.perm_grant),
+                onClick = { state.launchMultiplePermissionRequest() },
+                modifier = Modifier.fillMaxWidth().padding(top = PorcelainSpace.s4),
+            )
         }
     }
 }

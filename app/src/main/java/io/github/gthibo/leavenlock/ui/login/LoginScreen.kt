@@ -2,32 +2,19 @@ package io.github.gthibo.leavenlock.ui.login
 
 import android.app.Activity
 import android.view.WindowManager
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -36,26 +23,34 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.domain.LogLevel
-import io.github.gthibo.leavenlock.ui.theme.PixelBand
+import io.github.gthibo.leavenlock.ui.components.ButtonVariant
+import io.github.gthibo.leavenlock.ui.components.Hairline
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.PgField
+import io.github.gthibo.leavenlock.ui.components.PgProgress
+import io.github.gthibo.leavenlock.ui.components.PgTopBar
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 
 /**
  * Sign-in — one form, one job: email + password (+ optional 4-digit lock PIN).
  *
- * The session is generated fully on-device via the OneApp/CCI flow (see `EuIdpAuth`); there is no
- * browser, reCAPTCHA, or refresh token to paste. A live log strip surfaces each step.
+ * A live log strip surfaces each step.
  *
  * Security: FLAG_SECURE blocks screenshots/recents thumbnails while credentials are visible.
  */
@@ -91,21 +86,22 @@ fun LoginScreen(
     }
 
     Scaffold(
+        containerColor = Porcelain.colors.surface,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.login_title_bluelink)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
+            PgTopBar(
+                title = stringResource(R.string.login_title_bluelink),
+                onBack = onBack,
                 actions = {
                     if (log.isNotEmpty()) {
-                        TextButton(onClick = {
-                            val text = log.asReversed().joinToString("\n") { it.message }
-                            clipboard.setText(AnnotatedString(text))
-                        }) { Text(stringResource(R.string.login_copy_log)) }
-                        TextButton(onClick = { viewModel.clearLog() }) { Text(stringResource(R.string.login_clear)) }
+                        PgButton(
+                            text = stringResource(R.string.login_copy_log),
+                            onClick = {
+                                val text = log.asReversed().joinToString("\n") { it.message }
+                                clipboard.setText(AnnotatedString(text))
+                            },
+                            variant = ButtonVariant.Ghost,
+                        )
+                        PgButton(text = stringResource(R.string.login_clear), onClick = { viewModel.clearLog() }, variant = ButtonVariant.Ghost)
                     }
                 },
             )
@@ -117,32 +113,31 @@ fun LoginScreen(
                 .padding(padding),
         ) {
             if (state is LoginState.InProgress) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
+                PgProgress()
             }
 
             if (log.isNotEmpty()) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .heightIn(max = 160.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                PgCard(
+                    modifier = Modifier
+                        .padding(horizontal = PorcelainSpace.screenMargin, vertical = PorcelainSpace.s2),
+                    cut = 8.dp,
+                    contentPadding = PaddingValues(PorcelainSpace.s3),
+                    spacing = 2.dp,
                 ) {
-                    log.take(30).forEach { entry ->
-                        Text(
-                            entry.message,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = if (entry.level == LogLevel.ERROR) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 160.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        log.take(30).forEach { entry ->
+                            Text(
+                                entry.message,
+                                style = PorcelainText.data.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                                color = if (entry.level == LogLevel.ERROR) Porcelain.colors.danger else mutedText,
+                            )
+                        }
                     }
                 }
             }
@@ -182,61 +177,52 @@ private fun SignInForm(
         Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(PorcelainSpace.screenMargin),
+        verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s4),
     ) {
-        PixelBand(
-            modifier = Modifier.fillMaxWidth().height(10.dp),
-            color = MaterialTheme.colorScheme.primary,
-            cells = 20,
-        )
-        Text(
-            stringResource(R.string.login_intro),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        PgCard(title = stringResource(R.string.login_title_bluelink)) {
+            Text(stringResource(R.string.login_intro), style = PorcelainText.body, color = mutedText)
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = onEmailChange,
-            label = { Text(stringResource(R.string.login_email)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = onPasswordChange,
-            label = { Text(stringResource(R.string.login_password)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = pin,
-            onValueChange = onPinChange,
-            label = { Text(stringResource(R.string.login_pin)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            modifier = Modifier.fillMaxWidth(),
-        )
+            PgField(
+                label = stringResource(R.string.login_email),
+                value = email,
+                onValueChange = onEmailChange,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            )
+            PgField(
+                label = stringResource(R.string.login_password),
+                value = password,
+                onValueChange = onPasswordChange,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+            PgField(
+                label = stringResource(R.string.login_pin),
+                value = pin,
+                onValueChange = onPinChange,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            )
 
-        (state as? LoginState.Error)?.let {
-            Text(it.message, color = MaterialTheme.colorScheme.error)
+            (state as? LoginState.Error)?.let {
+                Text(it.message, style = PorcelainText.body, color = Porcelain.colors.danger)
+            }
+
+            PgButton(
+                text = stringResource(R.string.login_sign_in),
+                onClick = onSignIn,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = email.isNotBlank() && password.isNotBlank() && state !is LoginState.InProgress,
+            )
+
+            Hairline()
+
+            PgButton(
+                text = stringResource(R.string.login_demo),
+                onClick = onDemo,
+                modifier = Modifier.fillMaxWidth(),
+                variant = ButtonVariant.Tonal,
+            )
         }
-
-        Button(
-            onClick = onSignIn,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = email.isNotBlank() && password.isNotBlank() && state !is LoginState.InProgress,
-        ) { Text(stringResource(R.string.login_sign_in)) }
-
-        HorizontalDivider(Modifier.padding(vertical = 4.dp))
-
-        TextButton(
-            onClick = onDemo,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.login_demo)) }
     }
 }
