@@ -102,6 +102,21 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 - Keep `LockPolicy`, `LockStateMachine`, `AutoLockController`, `UsBlueLinkClient` and the fake
   client tests green.
 
+## 6b. Design system (Porcelain Grid) — reference only, not yet adopted
+A new look lives in `design/` (tokens, Compose theme, fonts, icons, brand marks). Read
+`design/README.md` before any UI, theme, icon, copy or notification work.
+- Source of truth: the maintainer's design system page on claude.ai; `design/` is a copy. If
+  they disagree, the page wins.
+- **Not wired into the build.** The app still runs on the old theme in `ui/theme/`. Adopting it
+  is a deliberate change: copy `design/android/theme/*.kt` to `ui/theme/porcelain/`, the fonts to
+  `res/font/`, the `ic_launcher_*` drawables over the current ones, use `PorcelainTheme` with
+  dynamic colour off and the user's System/Light/Dark choice, then update §2 in this file.
+- Open question before adopting: the design uses the name **LEAVE/LOCK**; the app and repo are
+  currently **Leave-N-Lock**.
+- UI rules in short: tokens only (no raw hex); cards chamfered top-right (16dp, 24dp hero), 4dp
+  max radius elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows or heavy
+  shadows; 48dp touch targets; short, factual, sentence-case copy.
+
 ## 7. Build & test
 - `./gradlew testDebugUnitTest` · `./gradlew lint` · `./gradlew assembleDebug` · `./gradlew installDebug`
 
@@ -130,3 +145,6 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
   i5-AutoLock development: real US lock/unlock with confirmation polling, encrypted US sign-in
   that survives restarts, car-reported time on the Home card, pre-lock status retries and
   "not locked" failure notifications.
+- 2026-11-05 — Added the Porcelain Grid design system under `design/` as reference (not wired in);
+  package paths updated to `io.github.gthibo.leavenlock`. Fonts are SIL OFL (licences in
+  `design/licenses/`).
