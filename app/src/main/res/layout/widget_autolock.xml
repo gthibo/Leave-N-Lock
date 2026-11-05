@@ -11,18 +11,21 @@
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="@font/ibm_plex_mono_medium"
+        android:letterSpacing="0.12"
         android:text="@string/app_name"
-        android:textColor="#CCFFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        android:textAllCaps="true"
+        android:textColor="@color/pg_on_teal_deep_muted"
+        android:textSize="11sp" />
 
     <TextView
         android:id="@+id/widget_lock_state"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Unknown"
-        android:textColor="#FFFFFFFF"
+        android:fontFamily="@font/exo2_variable"
+        android:text="@string/lock_unknown"
+        android:textColor="@color/pg_on_teal_deep"
         android:textSize="22sp"
         android:textStyle="bold" />
 
@@ -31,23 +34,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:maxLines="2"
         android:ellipsize="end"
+        android:fontFamily="@font/instrument_sans_variable"
+        android:maxLines="2"
         android:text=""
-        android:textColor="#DDFFFFFF"
-        android:textSize="12sp" />
+        android:textColor="@color/pg_on_teal_deep_muted"
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/widget_lock_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:background="@drawable/widget_button_bg"
+        android:fontFamily="@font/instrument_sans_variable"
         android:gravity="center"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:text="Lock now"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14sp"
+        android:minHeight="48dp"
+        android:text="@string/action_lock_now"
+        android:textColor="@color/pg_on_teal_deep"
+        android:textSize="15sp"
         android:textStyle="bold" />
 </LinearLayout>

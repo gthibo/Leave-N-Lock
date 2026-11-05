@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Routine action inside a hero surface: teal-deep-raised, 4dp corners. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="20dp" />
-    <solid android:color="#33FFFFFF" />
+    <corners android:radius="4dp" />
+    <solid android:color="@color/pg_teal_deep_raised" />
 </shape>

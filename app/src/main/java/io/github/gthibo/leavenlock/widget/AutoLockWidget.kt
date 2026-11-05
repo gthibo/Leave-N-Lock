@@ -35,10 +35,11 @@ class AutoLockWidget : AppWidgetProvider() {
 
         for (id in ids) {
             val views = RemoteViews(context.packageName, R.layout.widget_autolock).apply {
-                val (lockLabel, lockColor) = when (cached.lockState) {
-                    "LOCKED" -> "Locked" to 0xFF7CF5C4.toInt()
-                    "UNLOCKED" -> "Unlocked" to 0xFFFFC24B.toInt()
-                    else -> "Unknown" to 0xFFFFFFFF.toInt()
+                // Status always has words; the colour stays on-teal-deep (no colour-only meaning).
+                val lockLabel = when (cached.lockState) {
+                    "LOCKED" -> context.getString(R.string.lock_locked)
+                    "UNLOCKED" -> context.getString(R.string.lock_unlocked)
+                    else -> context.getString(R.string.lock_unknown)
                 }
                 val label = if (cached.lockState == "LOCKED" && cached.lastLockedAtEpochMs > 0) {
                     "$lockLabel · ${agoLabel(cached.lastLockedAtEpochMs)}"
@@ -46,7 +47,6 @@ class AutoLockWidget : AppWidgetProvider() {
                     lockLabel
                 }
                 setTextViewText(R.id.widget_lock_state, label)
-                setTextColor(R.id.widget_lock_state, lockColor)
                 setTextViewText(R.id.widget_summary, cached.summary)
 
                 setOnClickPendingIntent(R.id.widget_root, openAppIntent(context))
