@@ -20,10 +20,10 @@ import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 @Composable
 fun HeroBanner(
     title: String,
+    modifier: Modifier = Modifier,
     subtitle: String? = null,
     @DrawableRes icon: Int? = null,
     eyebrow: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     PgCard(
         modifier = modifier,

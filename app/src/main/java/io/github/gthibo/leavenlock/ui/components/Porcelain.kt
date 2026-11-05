@@ -70,6 +70,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.gthibo.leavenlock.R
@@ -350,7 +351,7 @@ fun PgSwitch(
     ) {
         Box(
             Modifier
-                .offset(x = x, y = 5.dp)
+                .offset { IntOffset(x.roundToPx(), 5.dp.roundToPx()) }
                 .size(18.dp)
                 .clip(PorcelainShape.radiusXs)
                 .background(if (enabled) thumb else thumb.copy(alpha = 0.5f)),
@@ -362,8 +363,8 @@ fun PgSwitch(
 @Composable
 fun SettingRow(
     title: String,
-    description: String? = null,
     modifier: Modifier = Modifier,
+    description: String? = null,
     divider: Boolean = false,
     control: (@Composable () -> Unit)? = null,
 ) {
@@ -397,7 +398,7 @@ fun SwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     divider: Boolean = true,
 ) {
-    SettingRow(title, description, divider = divider) {
+    SettingRow(title, description = description, divider = divider) {
         PgSwitch(checked, onCheckedChange, contentDescription = title)
     }
 }
