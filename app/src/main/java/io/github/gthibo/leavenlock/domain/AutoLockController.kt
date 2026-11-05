@@ -224,7 +224,7 @@ class AutoLockController @Inject constructor(
             throw c
         } catch (t: Throwable) {
             android.util.Log.w("AutoLockController", "evaluation failed", t)
-            failAndNotify("Leave-N-Lock hit an error: ${t.message ?: t.javaClass.simpleName}", NOTICE_ERROR, saidNotLocked = false)
+            failAndNotify("LEAVE/LOCK hit an error: ${t.message ?: t.javaClass.simpleName}", NOTICE_ERROR, saidNotLocked = false)
         }
     }
 
@@ -495,7 +495,7 @@ class AutoLockController @Inject constructor(
     }
 
     /**
-     * [fail] plus a one-off "Leave-N-Lock" summary notification, so giving up is never silent.
+     * [fail] plus a one-off "LEAVE/LOCK" summary notification, so giving up is never silent.
      * Gated by the departure-summary setting; a notification problem never breaks the flow.
      */
     private suspend fun failAndNotify(message: String, notice: String, saidNotLocked: Boolean = true) {
@@ -535,6 +535,6 @@ class AutoLockController @Inject constructor(
         const val STATUS_READ_TIMEOUT_MS = 15_000L
         const val NOTICE_NO_STATUS = "Couldn't reach Hyundai to check the car"
         const val NOTICE_SIGNED_OUT = "Signed out of BlueLink — sign in again"
-        const val NOTICE_ERROR = "Leave-N-Lock hit an error — check that your car is locked"
+        const val NOTICE_ERROR = "LEAVE/LOCK hit an error — check that your car is locked"
     }
 }

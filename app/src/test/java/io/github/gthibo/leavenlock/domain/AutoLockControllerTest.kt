@@ -1630,7 +1630,7 @@ class AutoLockControllerTest {
         coVerify(exactly = 0) { f.client.lock(any()) }
         assertTrue(
             f.log.entries.value.any {
-                it.message.contains("Leave-N-Lock hit an error: Test explosion")
+                it.message.contains("LEAVE/LOCK hit an error: Test explosion")
             }
         )
 
@@ -2005,7 +2005,7 @@ class AutoLockControllerTest {
                 AutoLockNotification.postDeparture(
                     f.context,
                     "Leave-N-Lock",
-                    "Leave-N-Lock hit an error — check that your car is locked",
+                    "LEAVE/LOCK hit an error — check that your car is locked",
                 )
             }
         }

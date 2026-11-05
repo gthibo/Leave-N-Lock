@@ -1,4 +1,6 @@
-# Leave-N-Lock
+# LEAVE/LOCK
+
+*(Repository and app ID: `Leave-N-Lock` / `io.github.gthibo.leavenlock`.)*
 
 Automatically locks your **Hyundai Ioniq 5** when you walk away and forget to lock it, through
 Hyundai **BlueLink (US)**. One job, on your phone only, running in the background.
@@ -37,7 +39,7 @@ notification saying the car was **not** locked, so a failure is never silent.
 | **Dry run** *(default)* | Runs the whole flow but **never sends a real lock**. It logs "would have locked". |
 | **Armed** | Sends real lock commands. |
 
-Leave-N-Lock only ever sends **lock** automatically. Unlock is a manual button that asks for
+LEAVE/LOCK only ever sends **lock** automatically. Unlock is a manual button that asks for
 your BlueLink PIN.
 
 ## Install
@@ -52,8 +54,8 @@ Grab the APK from [Releases](../../releases), or build it yourself (below). Andr
 5. Leave **Dry run** on and tap **Simulate leaving** on the Home screen to watch the full flow.
    Then do a real walk-away test or two, still in Dry run.
 6. When you trust it, switch to **Armed**.
-7. Allow background location and turn off battery optimization for Leave-N-Lock
-   (Settings → Keep Leave-N-Lock running), or Android may stop it in the background.
+7. Allow background location and turn off battery optimization for LEAVE/LOCK
+   (Settings → Keep LEAVE/LOCK running), or Android may stop it in the background.
 
 ## Privacy & security
 - Your BlueLink email, password and PIN are stored **encrypted on the phone**
@@ -100,6 +102,13 @@ app/src/main/java/io/github/gthibo/leavenlock/
 ```
 Architecture and conventions are in [CLAUDE.md](CLAUDE.md). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Design
+The app uses the **Porcelain Grid** design system: flat porcelain (light) and graphite (dark)
+themes, chosen in Settings as System default, Light or Dark (no wallpaper colours), cards with
+one chamfered corner, square pixel lamps instead of progress bars, and the Exo 2,
+Instrument Sans and IBM Plex Mono fonts (SIL Open Font Licence, see `design/licenses/`). The
+tokens, icons, logo files and UI rules are in [design/](design/README.md).
+
 ## Releases
 Push a `v*` tag and [.github/workflows/release.yml](.github/workflows/release.yml) builds the
 APK and publishes a GitHub Release, using the matching section of [CHANGELOG.md](CHANGELOG.md)
@@ -108,9 +117,9 @@ as the notes. For a signed APK, add the repository secrets `RELEASE_KEYSTORE_BAS
 `local.properties.example` for local signing).
 
 ## Credits
-- **[i5-AutoLock](https://github.com/Vel-San/i5-AutoLock) by Vel-San.** Leave-N-Lock is a
-  US-only, English-only fork of it. The app, its design, and the detection engine are Vel-San's
-  work; this fork removes the EU client and adds a US BlueLink client.
+- **[i5-AutoLock](https://github.com/Vel-San/i5-AutoLock) by Vel-San.** LEAVE/LOCK is a
+  US-only, English-only fork of it. The app and the detection engine are Vel-San's work; this
+  fork removes the EU client, adds a US BlueLink client and has a new look (Porcelain Grid).
 - **[hyundai_kia_connect_api](https://github.com/Hyundai-Kia-Connect/hyundai_kia_connect_api)**
   and **[bluelinky](https://github.com/Hacksore/bluelinky)**, whose reverse-engineering of the
   US BlueLink API the US client is based on.

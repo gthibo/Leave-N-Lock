@@ -31,7 +31,7 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 if (settingsRepo.settings.first().enabled) {
                     AutoLockService.startWatching(context)
-                    log.add(LogLevel.INFO, "Device restarted — Leave-N-Lock resumed watching.")
+                    log.add(LogLevel.INFO, "Device restarted — LEAVE/LOCK resumed watching.")
                 }
             } finally {
                 pending.finish()
