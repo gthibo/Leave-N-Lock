@@ -28,7 +28,7 @@
     <color name="pg_warn">#8A5A00</color>
     <color name="pg_danger">#A33A2B</color>
     <color name="pg_on_danger">#FFFFFF</color>
-    <color name="pg_tonal">#DEE2E3</color>
+    <color name="pg_tonal">#D3D8D9</color>
     <color name="pg_mark_hi">#5B686E</color>
     <color name="pg_mark_lo">#2E3337</color>
     <color name="pg_mark_rune">#F3F4F1</color>

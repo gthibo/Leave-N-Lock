@@ -27,7 +27,7 @@
   --warn: #8a5a00; /* Caution states (low range, cable unlocked). Always with a word. Text on surface and surface-raised. */
   --danger: #a33a2b; /* Faults and destructive or risky actions (Unlock now). Always with a word or icon. Text on surface and surface-raised; as a fill, with on-danger. */
   --on-danger: #ffffff; /* Label on a danger fill (Unlock now). */
-  --tonal: #dee2e3; /* A fill, not text: tonal buttons (Reload vehicles) and stat tiles. Their labels are ink, which reads 11.5:1 on tonal in light and 9.2:1 in dark. In dark it is lifted to #3a4348 so a tonal button separates from surface-raised. */
+  --tonal: #d3d8d9; /* A fill, not text: tonal buttons (Reload vehicles) and stat tiles. Their labels are ink, which reads 10.5:1 on tonal in light and 8.3:1 in dark. In dark it is lifted to #3a4348 so a tonal button separates from surface-raised. */
   --mark-hi: #5b686e; /* The lit facet of the LEAVE/LOCK mark: gunmetal on Porcelain, satin silver on Graphite. Mark only. */
   --mark-lo: #2e3337; /* The shaded facet, signal arcs and dissolving pixels of the mark. Mark only. */
   --mark-rune: #f3f4f1; /* The Bluetooth rune cut into the mark's body. Mark only. */
