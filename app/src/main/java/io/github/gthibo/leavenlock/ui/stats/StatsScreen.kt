@@ -2,27 +2,19 @@ package io.github.gthibo.leavenlock.ui.stats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,11 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gthibo.leavenlock.R
@@ -45,7 +36,17 @@ import io.github.gthibo.leavenlock.data.metrics.ApiCall
 import io.github.gthibo.leavenlock.data.metrics.ApiOutcome
 import io.github.gthibo.leavenlock.domain.LogEntry
 import io.github.gthibo.leavenlock.domain.LogLevel
-import io.github.gthibo.leavenlock.ui.theme.ambientBackground
+import io.github.gthibo.leavenlock.ui.components.ButtonVariant
+import io.github.gthibo.leavenlock.ui.components.Hairline
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.PgTopBar
+import io.github.gthibo.leavenlock.ui.components.SegmentMeter
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainShape
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 import io.github.gthibo.leavenlock.ui.util.copyToClipboard
 import io.github.gthibo.leavenlock.ui.util.toClipboardText
 import java.text.SimpleDateFormat
@@ -78,38 +79,30 @@ fun StatsScreen(
     confirm?.let { pending ->
         AlertDialog(
             onDismissRequest = { confirm = null },
-            title = { Text(pending.title) },
-            text = { Text(pending.message) },
+            shape = PorcelainShape.radiusSm,
+            containerColor = Porcelain.colors.surfaceRaised,
+            title = { Text(pending.title, style = PorcelainText.heading2) },
+            text = { Text(pending.message, style = PorcelainText.body) },
             confirmButton = {
-                TextButton(onClick = { pending.action(); confirm = null }) { Text(stringResource(R.string.stats_clear)) }
+                PgButton(stringResource(R.string.stats_clear), { pending.action(); confirm = null }, variant = ButtonVariant.Danger)
             },
             dismissButton = {
-                TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.action_cancel)) }
+                PgButton(stringResource(R.string.action_cancel), { confirm = null }, variant = ButtonVariant.Ghost)
             },
         )
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(ambientBackground()),
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.stats_title)) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Porcelain.colors.surface,
+        topBar = { PgTopBar(title = stringResource(R.string.stats_title), onBack = onBack) },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(start = PorcelainSpace.screenMargin, end = PorcelainSpace.screenMargin, top = PorcelainSpace.s1, bottom = PorcelainSpace.s6),
+            verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s4),
         ) {
             // Session / connection.
             Section(stringResource(R.string.stats_sec_session)) {
@@ -126,11 +119,11 @@ fun StatsScreen(
                         .coerceAtLeast(0)
                     Text(
                         stringResource(R.string.stats_rate_limited, secs.toInt()),
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
+                        style = PorcelainText.bodyStrong,
+                        color = Porcelain.colors.warn,
                     )
                 } else {
-                    Text(stringResource(R.string.stats_not_rate_limited), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.stats_not_rate_limited), style = PorcelainText.body, color = Porcelain.colors.teal)
                 }
                 KeyValue(stringResource(R.string.stats_rate_hits), snapshot.rateLimitedCount.toString())
             }
@@ -140,10 +133,7 @@ fun StatsScreen(
                 KeyValue(stringResource(R.string.stats_total_calls), snapshot.totalCalls.toString())
                 val pct = (snapshot.successRate * 100).roundToInt()
                 KeyValue(stringResource(R.string.stats_success_rate), "$pct%")
-                LinearProgressIndicator(
-                    progress = { snapshot.successRate },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                SegmentMeter(value = pct, contentDescription = "${stringResource(R.string.stats_success_rate)} $pct%")
                 KeyValue(stringResource(R.string.stats_successes), snapshot.successCount.toString())
                 KeyValue(stringResource(R.string.stats_failures), snapshot.failureCount.toString())
                 KeyValue(stringResource(R.string.stats_auth_failures), snapshot.unauthenticatedCount.toString())
@@ -162,14 +152,14 @@ fun StatsScreen(
                 },
                 content = {
                     if (snapshot.calls.isEmpty()) {
-                        Text(stringResource(R.string.stats_no_calls), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.stats_no_calls), style = PorcelainText.body, color = mutedText)
                     } else {
                         snapshot.calls.take(50).forEach { ApiCallRow(it) }
                     }
                 },
                 secondaryLabel = copyActionLabel.takeIf { snapshot.calls.isNotEmpty() },
                 onSecondary = if (snapshot.calls.isNotEmpty()) {
-                    { context.copyToClipboard("Leave-N-Lock API calls", snapshot.calls.toClipboardText()) }
+                    { context.copyToClipboard("LEAVE/LOCK API calls", snapshot.calls.toClipboardText()) }
                 } else null,
             )
 
@@ -182,14 +172,14 @@ fun StatsScreen(
                 },
                 content = {
                     if (log.isEmpty()) {
-                        Text(stringResource(R.string.stats_no_activity), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.stats_no_activity), style = PorcelainText.body, color = mutedText)
                     } else {
                         log.take(50).forEach { LogRow(it) }
                     }
                 },
                 secondaryLabel = copyActionLabel.takeIf { log.isNotEmpty() },
                 onSecondary = if (log.isNotEmpty()) {
-                    { context.copyToClipboard("Leave-N-Lock activity log", log.toClipboardText()) }
+                    { context.copyToClipboard("LEAVE/LOCK activity log", log.toClipboardText()) }
                 } else null,
             )
         }
@@ -198,12 +188,7 @@ fun StatsScreen(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            content()
-        }
-    }
+    PgCard(title = title, spacing = PorcelainSpace.s2) { content() }
 }
 
 @Composable
@@ -215,38 +200,31 @@ private fun SectionWithAction(
     secondaryLabel: String? = null,
     onSecondary: (() -> Unit)? = null,
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (secondaryLabel != null && onSecondary != null) {
-                        TextButton(onClick = onSecondary) { Text(secondaryLabel) }
-                    }
-                    TextButton(onClick = onAction) { Text(actionLabel) }
+    PgCard(
+        title = title,
+        spacing = PorcelainSpace.s2,
+        meta = {
+            Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s1)) {
+                if (secondaryLabel != null && onSecondary != null) {
+                    PgButton(secondaryLabel, onSecondary, variant = ButtonVariant.Ghost)
                 }
+                PgButton(actionLabel, onAction, variant = ButtonVariant.Ghost)
             }
-            content()
-        }
-    }
+        },
+    ) { content() }
 }
 
 @Composable
 private fun KeyValue(key: String, value: String) {
     Row(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(key, style = MaterialTheme.typography.bodyMedium)
+        Text(key, style = PorcelainText.body, color = mutedText)
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            style = PorcelainText.data.copy(fontSize = 14.sp),
             textAlign = TextAlign.End,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -255,34 +233,50 @@ private fun KeyValue(key: String, value: String) {
     }
 }
 
+/** A single square lamp pixel that marks an outcome (the words still say it). */
+@Composable
+private fun OutcomePixel(color: Color) {
+    Box(Modifier.padding(top = 6.dp).size(6.dp).background(color))
+}
+
 @Composable
 private fun ApiCallRow(call: ApiCall) {
     val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(call.timestamp))
+    val c = Porcelain.colors
     val color = when (call.outcome) {
-        ApiOutcome.SUCCESS -> MaterialTheme.colorScheme.primary
-        ApiOutcome.RATE_LIMITED -> MaterialTheme.colorScheme.tertiary
-        ApiOutcome.UNAUTHENTICATED -> MaterialTheme.colorScheme.tertiary
-        ApiOutcome.FAILURE -> MaterialTheme.colorScheme.error
+        ApiOutcome.SUCCESS -> c.teal
+        ApiOutcome.RATE_LIMITED -> c.signal
+        ApiOutcome.UNAUTHENTICATED -> c.signal
+        ApiOutcome.FAILURE -> c.danger
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(time, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
-        Text(call.operation, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-        Text("${call.durationMs}ms", style = MaterialTheme.typography.labelMedium)
-        Text(call.outcome.name, style = MaterialTheme.typography.labelMedium, color = color)
+    Column {
+        Hairline()
+        Row(Modifier.fillMaxWidth().padding(vertical = PorcelainSpace.s2), horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            OutcomePixel(color)
+            Text(time, style = PorcelainText.data, color = mutedText)
+            Text(call.operation, style = PorcelainText.bodySm, modifier = Modifier.weight(1f))
+            Text("${call.durationMs}ms", style = PorcelainText.data, color = mutedText)
+            Text(call.outcome.name, style = PorcelainText.label)
+        }
     }
 }
 
 @Composable
 private fun LogRow(entry: LogEntry) {
     val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp))
+    val c = Porcelain.colors
     val color = when (entry.level) {
-        LogLevel.SUCCESS -> MaterialTheme.colorScheme.primary
-        LogLevel.WARN -> MaterialTheme.colorScheme.tertiary
-        LogLevel.ERROR -> MaterialTheme.colorScheme.error
-        LogLevel.INFO -> MaterialTheme.colorScheme.onSurfaceVariant
+        LogLevel.SUCCESS -> c.teal
+        LogLevel.WARN -> c.signal
+        LogLevel.ERROR -> c.danger
+        LogLevel.INFO -> c.lineStrong
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(time, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
-        Text(entry.message, style = MaterialTheme.typography.bodySmall, color = color)
+    Column {
+        Hairline()
+        Row(Modifier.fillMaxWidth().padding(vertical = PorcelainSpace.s2), horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            OutcomePixel(color)
+            Text(time, style = PorcelainText.data, color = mutedText)
+            Text(entry.message, style = PorcelainText.bodySm, modifier = Modifier.weight(1f))
+        }
     }
 }

@@ -2,7 +2,6 @@ package io.github.gthibo.leavenlock.ui.about
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,20 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -46,8 +34,16 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.github.gthibo.leavenlock.BuildConfig
 import io.github.gthibo.leavenlock.R
+import io.github.gthibo.leavenlock.ui.components.ButtonVariant
+import io.github.gthibo.leavenlock.ui.components.Hairline
 import io.github.gthibo.leavenlock.ui.components.HeroBanner
-import io.github.gthibo.leavenlock.ui.theme.ambientBackground
+import io.github.gthibo.leavenlock.ui.components.PgButton
+import io.github.gthibo.leavenlock.ui.components.PgCard
+import io.github.gthibo.leavenlock.ui.components.PgTopBar
+import io.github.gthibo.leavenlock.ui.components.mutedText
+import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
+import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 
 private const val PROJECT_URL = "https://github.com/gthibo/Leave-N-Lock"
 
@@ -58,67 +54,40 @@ fun AboutScreen(onBack: () -> Unit) {
     val changelog = remember { readChangelog(context) }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(ambientBackground()),
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about_title)) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Porcelain.colors.surface,
+        topBar = { PgTopBar(title = stringResource(R.string.about_title), onBack = onBack) },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(start = PorcelainSpace.screenMargin, end = PorcelainSpace.screenMargin, top = PorcelainSpace.s1, bottom = PorcelainSpace.s6),
+            verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s4),
         ) {
             HeroBanner(
                 title = stringResource(R.string.app_name),
                 subtitle = stringResource(R.string.about_hero_subtitle),
-                icon = Icons.Default.Info,
+                icon = null,
                 eyebrow = stringResource(R.string.about_hero_eyebrow),
             )
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        stringResource(R.string.about_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        stringResource(R.string.about_open_source_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    OutlinedButton(
-                        onClick = { openUrl(context, PROJECT_URL) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.about_view_project)) }
-                }
+            PgCard(title = stringResource(R.string.about_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)) {
+                Text(stringResource(R.string.about_open_source_body), style = PorcelainText.body)
+                PgButton(
+                    text = stringResource(R.string.about_view_project),
+                    onClick = { openUrl(context, PROJECT_URL) },
+                    modifier = Modifier.fillMaxWidth(),
+                    variant = ButtonVariant.Secondary,
+                    icon = R.drawable.ic_pg_arrow_right,
+                )
             }
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        stringResource(R.string.about_whats_new),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    if (changelog.isEmpty()) {
-                        Text(
-                            stringResource(R.string.about_changelog_unavailable),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    } else {
-                        changelog.forEach { line -> ChangelogLine(line) }
-                    }
+            PgCard(title = stringResource(R.string.about_whats_new), spacing = PorcelainSpace.s2) {
+                if (changelog.isEmpty()) {
+                    Text(stringResource(R.string.about_changelog_unavailable), style = PorcelainText.body, color = mutedText)
+                } else {
+                    changelog.forEach { line -> ChangelogLine(line) }
                 }
             }
         }
@@ -128,34 +97,31 @@ fun AboutScreen(onBack: () -> Unit) {
 /** Renders one Markdown line: headings, bullets, horizontal rules + inline **bold**, *italic*, `code`, links. */
 @Composable
 private fun ChangelogLine(line: String) {
-    val linkColor = MaterialTheme.colorScheme.primary
-    val codeColor = MaterialTheme.colorScheme.secondary
+    val linkColor = Porcelain.colors.link
+    val codeColor = Porcelain.colors.inkMuted
     val trimmed = line.trimStart()
     when {
         line.startsWith("# ") -> Unit // top-level title, skip
         line.startsWith("### ") -> Text(
             inlineMarkdown(line.removePrefix("### ").trim(), linkColor, codeColor),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            style = PorcelainText.heading3,
         )
         line.startsWith("## ") -> Text(
             inlineMarkdown(line.removePrefix("## ").trim(), linkColor, codeColor),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
+            style = PorcelainText.heading2,
         )
-        trimmed == "---" || trimmed == "***" || trimmed == "___" -> HorizontalDivider()
+        trimmed == "---" || trimmed == "***" || trimmed == "___" -> Hairline()
         trimmed.startsWith("- ") || trimmed.startsWith("* ") -> Text(
             buildAnnotatedString {
                 append("•  ")
                 append(inlineMarkdown(trimmed.drop(2).trim(), linkColor, codeColor))
             },
-            style = MaterialTheme.typography.bodyMedium,
+            style = PorcelainText.body,
         )
         line.isBlank() -> Spacer(Modifier.height(2.dp))
         else -> Text(
             inlineMarkdown(line.trim(), linkColor, codeColor),
-            style = MaterialTheme.typography.bodyMedium,
+            style = PorcelainText.body,
         )
     }
 }
