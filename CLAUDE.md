@@ -16,7 +16,9 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 
 ## 2. Tech stack
 - 100% Kotlin, JDK 17, `minSdk 26`, `target/compileSdk 35`.
-- UI: Jetpack Compose + Material 3 (dynamic color). No XML layouts.
+- UI: Jetpack Compose + Material 3, themed with the **Porcelain Grid** design system
+  (`ui/theme/porcelain/`, see §6b). Dynamic colour is **off**; the user picks System default /
+  Light / Dark. Fonts are bundled in `res/font/`. No XML layouts (except the widget).
 - DI: Hilt. Async: Coroutines + Flow. HTTP: Ktor (OkHttp engine) + kotlinx.serialization.
 - Storage: DataStore (settings), EncryptedSharedPreferences/Keystore (PIN + US sign-in).
 - Background: Foreground Service (`connectedDevice`) + BroadcastReceivers. WorkManager via Hilt.
@@ -45,7 +47,10 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 - `receiver/` — Bluetooth (primary trigger), boot, geofence, activity-transition receivers.
 - `tile/`, `widget/`, `work/StatusRefreshWorker`, `di/AppModule`.
 - `ui/` — Compose: `home/`, `settings/`, `login/`, `stats/`, `help/`, `about/`, `onboarding/`,
-  `permissions/`, `components/`, `theme/`, `AppNavigation`.
+  `permissions/`, `components/` (`Porcelain.kt`: the shared design pieces — `PgCard`, `PgButton`,
+  `PgSwitch`, `PgRadio`, `PgSlider`, `PgLabel`, `SegmentMeter`, `StatTile`, `SettingRow`,
+  `PgField`, `PgTopBar`, `PorcelainMark`; `Hero.kt`: `HeroBanner`), `theme/` (`porcelain/` theme
+  files copied from `design/`, `ThemeViewModel`), `AppNavigation`.
 
 ## 4. The two hard parts
 ### 4a. "I left the car" detection
@@ -102,21 +107,29 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 - Keep `LockPolicy`, `LockStateMachine`, `AutoLockController`, `UsBlueLinkClient` and the fake
   client tests green.
 
-## 6b. Design system (Porcelain Grid) — reference only, not yet adopted
-A new look lives in `design/` (tokens, Compose theme, fonts, icons, brand marks). Read
-`design/README.md` before any UI, theme, icon, copy or notification work.
+## 6b. Design system (Porcelain Grid) — adopted
+The app's look is the **Porcelain Grid** design system; the user-facing name is **LEAVE/LOCK**
+(app label, screens, notifications, README). The repo name `Leave-N-Lock` and the app ID stay.
+Read `design/README.md` before any UI, theme, icon, copy or notification work.
 - Source of truth: the maintainer's design system page on claude.ai; `design/` is a copy. If
-  they disagree, the page wins.
-- **Not wired into the build.** The app still runs on the old theme in `ui/theme/`. Adopting it
-  is a deliberate change: copy `design/android/theme/*.kt` to `ui/theme/porcelain/`, the fonts to
-  `res/font/`, the `ic_launcher_*` drawables over the current ones, use `PorcelainTheme` with
-  dynamic colour off and the user's System/Light/Dark choice, then update §2 in this file.
-- Decided 2026-11-05: when adopted, the user-facing name becomes **LEAVE/LOCK** (app label,
-  screens, notifications, README). Repo name and app ID stay. Adoption happens **after** the
-  first Dry-run testing on the car, so redesign issues and logic issues stay separate.
-- UI rules in short: tokens only (no raw hex); cards chamfered top-right (16dp, 24dp hero), 4dp
-  max radius elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows or heavy
-  shadows; 48dp touch targets; short, factual, sentence-case copy.
+  they disagree, the page wins. Change the page first, then refresh `design/`, then the app.
+- Wiring: `design/android/theme/*.kt` → `ui/theme/porcelain/`, fonts → `res/font/`,
+  `porcelain_colors.xml` → `res/values(-night)/`, `ic_launcher_*`, `ic_stat_leavelock` and the
+  used `ic_pg_*` icons → `res/drawable/`. `MainActivity` applies `PorcelainTheme(darkTheme)` from
+  the saved `ThemeMode` and sets the system-bar icon colour to match. `AppSettings.dynamicColor`
+  is kept (backups) but no longer used or shown.
+- Screens build only from `ui/components/Porcelain.kt`; colours come from `Porcelain.colors`
+  (never raw hex), text from `PorcelainText`, spacing from `PorcelainSpace`. Inside a hero card
+  `LocalOnHero` flips controls to the on-teal-deep colours.
+- Two app-side deviations from the `design/` copy (keep them when refreshing): the `ic_pg_*`
+  icons use `?android:attr/colorControlNormal` (the app has no AppCompat), and the Material
+  `Shapes` slots use `CutCornerShape(topEnd = …)` because Material 3 1.3 needs corner-based
+  shapes there (`ChamferShape` is still used for cards).
+- The widget is a flat teal-deep surface with 4dp corners (RemoteViews can't draw the chamfer).
+- UI rules in short: tokens only; cards chamfered top-right (16dp, 24dp hero), 4dp max radius
+  elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows, blurred textures,
+  pulsing or heavy shadows; pixel clusters crisp and static; 48dp touch targets; short,
+  factual, sentence-case copy; status always has words.
 
 ## 7. Build & test
 - `./gradlew testDebugUnitTest` · `./gradlew lint` · `./gradlew assembleDebug` · `./gradlew installDebug`
@@ -134,7 +147,7 @@ A new look lives in `design/` (tokens, Compose theme, fonts, icons, brand marks)
   the run can end "Lock sent, not confirmed" even though the car locked. A live refresh
   (`refresh: true`) is supported by the reference library but not used yet.
 - Optional speed-up: US refresh-token grant instead of a full sign-in every ~30 min.
-- Cert-pin hashes, a bundled display font, and Play `GeofencingClient` at arrival are not done.
+- Cert-pin hashes and Play `GeofencingClient` at arrival are not done.
 - `ActivityLog` diagnostic messages are hard-coded English (no `Context` in the domain layer).
 
 ## 9. Changelog
@@ -149,3 +162,9 @@ A new look lives in `design/` (tokens, Compose theme, fonts, icons, brand marks)
 - 2026-11-05 — Added the Porcelain Grid design system under `design/` as reference (not wired in);
   package paths updated to `io.github.gthibo.leavenlock`. Fonts are SIL OFL (licences in
   `design/licenses/`).
+- 2026-11-05 — Adopted the Porcelain Grid design on the `design-system` branch: `PorcelainTheme`
+  (dynamic colour off, System/Light/Dark kept), bundled fonts, new launcher and notification
+  icons, shared components in `ui/components/Porcelain.kt`; every screen, the widget and the
+  notification accent restyled; old gradients, glows and pixel textures (`Theme.kt`, `Color.kt`,
+  `Brand.kt`, `PixelDecor.kt`) removed. User-facing name is now LEAVE/LOCK. No locking-logic
+  changes; two controller notice texts renamed and their two test assertions updated.

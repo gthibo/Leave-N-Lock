@@ -5,7 +5,7 @@ https://claude.ai/artifact/MBB1pMEZ219qXmbJMCFqxp
 
 If this folder and the page disagree, the page wins. Change the page first, then refresh this folder from it.
 
-> **Status: reference only.** Nothing in this folder is wired into the build yet. `app/` still uses the old theme in `ui/theme/`. Moving the app onto this design system is a production-code change, so it only happens as a deliberate, reviewed change (see CONTRIBUTING.md).
+> **Status: adopted.** The app uses this design system. The build does not read this folder directly: its files were copied into `app/` (theme to `ui/theme/porcelain/`, fonts, colours and icons to `res/`), with two small app-side fixes recorded in CLAUDE.md §6b. When the design changes, refresh this folder from the page, then copy the changed files into `app/` again.
 
 ## What's here
 

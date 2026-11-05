@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+- **New look and name: LEAVE/LOCK.** The app now uses the Porcelain Grid design: calm
+  porcelain (light) and graphite (dark) themes, flat cards with one cut corner, square
+  "pixel lamp" meters, new fonts, a new app icon and a new notification icon. The old
+  gradients and glowing, animated pixel textures are gone.
+- **Theme choice:** Settings → Appearance offers System default, Light or Dark. The
+  "Dynamic color" (wallpaper colours) switch was removed so the app keeps its own palette.
+- **Clearer settings:** Dry run and Armed now say what they do on a second line ("Never sends
+  a real lock", "Locks the car for real").
+- No changes to how detection or locking works.
+
 ## [0.1.0] - 2026-11-04
 
 First release of **Leave-N-Lock**, a US-only, English-only fork of
