@@ -91,7 +91,6 @@ class SettingsViewModel @Inject constructor(
     fun setDemoMode(demo: Boolean) = update { it.copy(demoMode = demo) }
     fun setRunMode(mode: RunMode) = update { it.copy(runMode = mode) }
     fun setThemeMode(mode: ThemeMode) = update { it.copy(themeMode = mode) }
-    fun setDynamicColor(enabled: Boolean) = update { it.copy(dynamicColor = enabled) }
     fun setShowStatusInNotification(enabled: Boolean) = update { it.copy(showStatusInNotification = enabled) }
     fun toggleNotificationField(field: NotificationField, enabled: Boolean) = update {
         val next = it.notificationFields.toMutableSet().apply { if (enabled) add(field) else remove(field) }

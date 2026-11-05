@@ -500,12 +500,6 @@ fun SettingsScreen(
                         )
                     }
                 }
-                RowToggle(
-                    title = stringResource(R.string.set_dynamic_title),
-                    subtitle = stringResource(R.string.set_dynamic_sub),
-                    checked = settings.dynamicColor,
-                    onCheckedChange = viewModel::setDynamicColor,
-                )
             }
 
             // Keep running.

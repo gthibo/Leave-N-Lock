@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- LEAVE/LOCK window theme: Graphite surface behind Compose, so launch shows no other colour. -->
     <style name="Theme.AutoLock" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/pg_surface</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Porcelain Grid colours (generated). For XML-only places: widget, notification, splash. -->
+<resources>
+    <color name="pg_surface">#F3F4F1</color>
+    <color name="pg_surface_raised">#FBFBFA</color>
+    <color name="pg_surface_sunken">#E9EBE8</color>
+    <color name="pg_silver">#C9CED0</color>
+    <color name="pg_silver_soft">#DEE2E3</color>
+    <color name="pg_line">#D3D8D9</color>
+    <color name="pg_line_strong">#80888C</color>
+    <color name="pg_ink">#23272A</color>
+    <color name="pg_ink_muted">#565E62</color>
+    <color name="pg_graphite">#2E3337</color>
+    <color name="pg_on_graphite">#F3F4F1</color>
+    <color name="pg_teal">#2E6E74</color>
+    <color name="pg_teal_soft">#DCE9E8</color>
+    <color name="pg_on_teal">#FFFFFF</color>
+    <color name="pg_teal_deep">#1F5257</color>
+    <color name="pg_teal_deep_edge">#1F5257</color>
+    <color name="pg_teal_deep_raised">#2A6267</color>
+    <color name="pg_on_teal_deep">#EEF4F3</color>
+    <color name="pg_on_teal_deep_muted">#A9CBC7</color>
+    <color name="pg_mint">#B9E8DC</color>
+    <color name="pg_on_mint">#23272A</color>
+    <color name="pg_signal">#E39A2D</color>
+    <color name="pg_focus">#2E6E74</color>
+    <color name="pg_link">#2E6E74</color>
+    <color name="pg_warn">#8A5A00</color>
+    <color name="pg_danger">#A33A2B</color>
+    <color name="pg_on_danger">#FFFFFF</color>
+    <color name="pg_tonal">#DEE2E3</color>
+    <color name="pg_mark_hi">#5B686E</color>
+    <color name="pg_mark_lo">#2E3337</color>
+    <color name="pg_mark_rune">#F3F4F1</color>
+</resources>

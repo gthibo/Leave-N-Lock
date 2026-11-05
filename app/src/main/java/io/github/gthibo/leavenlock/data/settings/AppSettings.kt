@@ -38,6 +38,8 @@ data class AppSettings(
 
     // Appearance.
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    // No longer used: LEAVE/LOCK keeps its own palette (dynamic colour off). Kept so older
+    // backups and saved settings still load unchanged.
     val dynamicColor: Boolean = true,
 
     // Notification content the user wants to see.

@@ -32,8 +32,8 @@ object AutoLockNotification {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, AutoLockApp.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_autolock)
-            .setColor(ContextCompat.getColor(context, R.color.notification_accent))
+            .setSmallIcon(R.drawable.ic_stat_leavelock)
+            .setColor(ContextCompat.getColor(context, R.color.pg_teal))
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -75,8 +75,8 @@ object AutoLockNotification {
         val text = statusSummary?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.notif_watching_body)
         return NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_stat_autolock)
-            .setColor(ContextCompat.getColor(context, R.color.notification_accent))
+            .setSmallIcon(R.drawable.ic_stat_leavelock)
+            .setColor(ContextCompat.getColor(context, R.color.pg_teal))
             .setContentTitle(context.getString(R.string.notif_watching_title))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -124,8 +124,8 @@ object AutoLockNotification {
         val canLockNow = showLockNow && waiting
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_stat_autolock)
-            .setColor(ContextCompat.getColor(context, R.color.notification_accent))
+            .setSmallIcon(R.drawable.ic_stat_leavelock)
+            .setColor(ContextCompat.getColor(context, R.color.pg_teal))
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))

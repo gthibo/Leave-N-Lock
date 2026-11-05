@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+/** The user's theme choice (System default / Light / Dark). Dynamic colour is not offered. */
 data class ThemePrefs(
     val mode: ThemeMode = ThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
 )
 
 @HiltViewModel
@@ -21,6 +21,6 @@ class ThemeViewModel @Inject constructor(
     settingsRepo: SettingsRepository,
 ) : ViewModel() {
     val prefs: StateFlow<ThemePrefs> = settingsRepo.settings
-        .map { ThemePrefs(it.themeMode, it.dynamicColor) }
+        .map { ThemePrefs(it.themeMode) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemePrefs())
 }
