@@ -131,28 +131,32 @@
       (p.actions || []).map(function (a) { return h('button', { key: a.icon, type: 'button', className: 'pg-iconbtn pg-focus', 'aria-label': a.label, onClick: a.onClick }, h(Icon, { name: a.icon, size: 24 })); }));
   }
 
-  // The LEAVE/LOCK mark, drawn from the app icon: a squared open padlock split on the diagonal,
-  // the Bluetooth rune on the body, a 4x4 pixel dissolve on the shackle with one amber cell, and three signal arcs.
-  // `compact` drops the arcs for 24px and under. Geometry is in the app icon's 512 coordinates.
-  var RUNE = 'M789 1064V0l1281 1012-702 643 702 661L778 3334l12-1123-544 532L0 2509l789-737v-263L5 778l246-251 538 538zm344-352l363 305-363 292V712zm0 1304l363 305-363 292v-597z';
-  var DISSOLVE = ['llll', 'lmlm', 'm.ma', 'd.d.'];
-  var DCLS = { l: 'mk-lo', m: 'mk-mid', d: 'mk-dim', a: 'mk-sig' };
+  // The LEAVE/LOCK mark, drawn from the app icon: a squared open padlock split on the diagonal (a fine seam in the gap),
+  // the Bluetooth rune on the body, a notched 3x4 pixel grid on the shackle's right leg with one amber cell, and three signal arcs.
+  // `compact` drops the arcs for 24px and under. Geometry is in the app icon's 512 coordinates (same as assets/Logos).
+  var RUNE = 'M220.015 295.517v-61.045l73.495 58.061-40.276 36.891 40.276 37.924-74.126 58.406.688-64.43-31.211 30.522-14.114-13.425 45.267-42.284v-15.089l-44.98-41.94 14.114-14.401 30.867 30.867v-.057ZM239.751 275.321l20.826 17.499-20.826 16.753v-34.252ZM239.751 350.136l20.826 17.499-20.826 16.753v-34.252Z';
+  // [x, y, class] for each 11.022 cell, top-left first; the top-middle cell is the notch (empty).
+  var GRID = [[298.434, 160.362, 'mk-px-lit'], [320.509, 160.362, 'mk-px-lit'],
+    [298.434, 171.399, 'mk-px-mid'], [309.472, 171.399, 'mk-px-lit'], [320.509, 171.412, 'mk-px-mid'],
+    [298.434, 182.437, 'mk-px-lit'], [309.472, 182.437, 'mk-px-mid'], [320.488, 182.428, 'mk-px-lit'],
+    [298.498, 193.465, 'mk-px-off'], [309.493, 193.465, 'mk-px-dim'], [320.509, 193.459, 'mk-sig']];
   function Mark(p) {
     var size = p.size || 32, full = !p.compact;
-    var vb = full ? [128, 74, 314, 374] : [128, 74, 252, 374];
-    var w = size * vb[2] / vb[3], cells = [];
-    DISSOLVE.forEach(function (row, j) { for (var i = 0; i < 4; i++) { var c = row[i]; if (c !== '.') cells.push(h('rect', { key: i + '-' + j, className: DCLS[c], x: 312.5 + i * 8.25, y: 171.5 + j * 8.25, width: 8.25, height: 8.25 })); } });
+    var vb = full ? [114, 74, 314, 374] : [114, 74, 252, 374];
+    var w = size * vb[2] / vb[3];
+    var cells = GRID.map(function (c, i) { return h('rect', { key: i, className: c[2], x: c[0], y: c[1], width: 11.022, height: 11.022 }); });
     var g = h('svg', { className: cx('pg-mark-svg', p.tone === 'light' && 'pg-mark-light'), width: Math.round(w), height: size, viewBox: vb.join(' '), 'aria-hidden': p.word ? 'true' : undefined, role: p.word ? undefined : 'img', 'aria-label': p.word ? undefined : 'LEAVE/LOCK' },
-      h('path', { className: 'mk-hi', d: 'M133.415 212.887V442.891L373.68 212.887Z' }),
-      h('path', { className: 'mk-lo', d: 'M375.34 443.943V213.939L135.075 443.943Z' }),
-      h('path', { className: 'mk-lo', d: 'M254.5 78h50l41 41v52.5h-33V135l-24-24h-34Z' }),
-      h('path', { className: 'mk-hi', d: 'M254.5 78h-50l-41 41v85.5h33V135l24-24h34Z' }),
+      h('line', { className: 'mk-seam', x1: 360.038, y1: 214.189, x2: 120.774, y2: 442.925, strokeWidth: 2.4, strokeLinecap: 'round' }),
+      h('path', { className: 'mk-hi', d: 'M119.415 212.887V442.891L359.68 212.887Z' }),
+      h('path', { className: 'mk-lo', d: 'M361.34 443.943V213.939L121.075 443.943Z' }),
+      h('path', { className: 'mk-lo', d: 'M240.5 78h50l41 41v85.5h-33V135l-24-24h-34Z' }),
+      h('path', { className: 'mk-hi', d: 'M240.5 78h-50l-41 41v85.5h33V135l24-24h34Z' }),
       cells,
       full ? h('g', { className: 'mk-arcs' },
-        h('path', { d: 'M369 134c16.952 16.491 17.836 43.434 2 61', strokeWidth: 5 }),
-        h('path', { d: 'M386 113c28.713 26.915 30.494 71.898 4 101', strokeWidth: 6.5 }),
-        h('path', { d: 'M401 92c20.355 17.215 32.818 41.98 34.516 68.584s-7.515 52.753-25.516 72.416', strokeWidth: 8 })) : null,
-      h('path', { className: 'mk-rune', d: RUNE, transform: 'translate(188.75 234.47) scale(0.05737)', fillRule: 'evenodd' }));
+        h('path', { d: 'M355 134c16.952 16.491 17.836 43.434 2 61', strokeWidth: 5 }),
+        h('path', { d: 'M372 113c28.713 26.915 30.494 71.898 4 101', strokeWidth: 6.5 }),
+        h('path', { d: 'M387 92c20.355 17.215 32.818 41.98 34.516 68.584s-7.515 52.753-25.516 72.416', strokeWidth: 8 })) : null,
+      h('path', { className: 'mk-rune', d: RUNE, fillRule: 'evenodd' }));
     if (!p.word) return h('span', { className: cx('pg-mark', p.className) }, g);
     var word = p.stacked ? h('span', { className: 'pg-mark-word pg-mark-stacked' }, 'LEAVE', h('br'), '/LOCK') : h('span', { className: 'pg-mark-word' }, 'LEAVE/LOCK');
     return h('span', { className: cx('pg-mark', p.tone === 'light' && 'pg-mark-on-deep', p.className), role: 'img', 'aria-label': 'LEAVE/LOCK', style: p.wordSize ? { fontSize: p.wordSize } : null }, g, word);

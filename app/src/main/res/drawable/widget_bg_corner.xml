@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Top-right 24dp corner of widget_bg: the area below the chamfer line, in the edge colour, with the
+    fill on top set 1dp in from the cut (1.414 along each axis) and from the top and right edges.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M0,0L24,24H0Z" android:fillColor="@color/pg_teal_deep_edge" />
+    <path android:pathData="M0,1.414L22.586,24H0Z" android:fillColor="@color/pg_teal_deep" />
+</vector>

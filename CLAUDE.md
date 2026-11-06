@@ -147,7 +147,15 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   icons use `?android:attr/colorControlNormal` (the app has no AppCompat), and the Material
   `Shapes` slots use `CutCornerShape(topEnd = …)` because Material 3 1.3 needs corner-based
   shapes there (`ChamferShape` is still used for cards).
-- The widget is a flat teal-deep surface with 4dp corners (RemoteViews can't draw the chamfer).
+- `PorcelainMark` (welcome screen, `BrandLockup`) redraws `mark-compact-on-*` on a Canvas with
+  the `markPx*` / `markSeam` tokens; keep its geometry in step with `design/brand/` when the art
+  changes.
+- The widget is a flat teal-deep surface with the hero chamfer (24dp, top-right) and square
+  corners. RemoteViews can't use `ChamferShape`, so `widget_bg.xml` builds the cut from layers
+  (two rects + the `widget_bg_corner` triangle, edge then 1dp-inset fill); a single vector would
+  warp on resize. The layout root is `@android:id/background` with `clipToOutline` so Launcher3
+  doesn't round the corners; keep the transparent full-size first layer, since a LayerDrawable's
+  outline (and so the clip) comes from its first layer.
 - UI rules in short: tokens only; cards chamfered top-right (16dp, 24dp hero), 4dp max radius
   elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows, blurred textures,
   pulsing or heavy shadows; pixel clusters crisp and static; 48dp touch targets; short,
@@ -230,3 +238,19 @@ work goes on its own branch cut from `main`.
   `SettingsBackup` (old backups still restore: `ignoreUnknownKeys`), the ViewModel, the Settings
   Timing section and `strings.xml`. `SettingsRepository` deletes the stored `min_refresh_seconds`
   key on the next save.
+- 2026-11-06 — App icon refresh from the maintainer's Illustrator file: art moved 14 units left,
+  4×4 8.25-unit pixel cluster replaced by a notched 3×4 grid of 11.022-unit cells, light seam
+  (#E6E8E5, 2.4) along the body diagonal, right shackle leg runs down behind the grid. Updated
+  `ic_launcher_foreground/monochrome.xml` (translateX 68.56 → 77.8), `design/brand/app-icon*.svg`,
+  `mark-*.svg` (viewBox x 128 → 114) and `favicon.svg`.
+- 2026-11-06 — Widget chamfer: `widget_bg.xml` is now a layer-list with a 24dp top-right cut
+  (new `widget_bg_corner.xml`) and square corners; the layout root id is `@android:id/background`
+  with `clipToOutline` (opts out of Launcher3's rounding), so `AutoLockWidget` sets the open-app
+  click on `android.R.id.background` (was `R.id.widget_root`). Checked on the API 37 emulator in
+  light and dark.
+- 2026-11-06 — Caught the claude.ai design page up with the app (icon/mark art, corner bleed,
+  widget spec, copy), then the app with the page: `line-strong` #80888C → #7A8286 (light) and
+  #687075 → #70787C (dark) to keep 3:1 on the new surfaces; new mark tokens `mark-px-lit/-mid/
+  -dim/-off` and `mark-seam` (Kotlin, `porcelain_colors.xml`, `design/tokens`); `PorcelainMark`
+  redrawn with the new art (notched 3×4 grid, seam, viewBox x 114). `design/tokens` and
+  `design/web/bundle.*` refreshed from the page.
