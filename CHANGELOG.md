@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **The activity log says when a reconnect cancels an auto-lock.** If your phone reconnects to
+  the car's Bluetooth while an auto-lock is running (say, you got back in), the log now shows
+  "Car Bluetooth reconnected — auto-lock cancelled." instead of the run just stopping with no
+  explanation. Nothing else changes: a reconnect still cancels the run and no lock is sent.
 - **The widget's button follows the lock state.** When the car is saved as locked, the
   widget offers "Unlock…" (in the red danger colour) instead of "Lock now". Tapping it never
   unlocks right away: it opens LEAVE/LOCK on the same "Unlock the car now?" confirmation as

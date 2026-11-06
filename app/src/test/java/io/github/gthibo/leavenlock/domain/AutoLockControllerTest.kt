@@ -135,6 +135,37 @@ class AutoLockControllerTest {
     }
 
     @Test
+    fun cancelWithReasonDuringRunLogsItAndSendsNoLock() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        assertEquals(DetectionState.GRACE, f.controller.state.value.detection)
+
+        f.controller.cancel(reason = "Car Bluetooth reconnected")
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
+
+        assertEquals(DetectionState.ABORTED, f.controller.state.value.detection)
+        coVerify(exactly = 0) { f.client.lock(any()) }
+        assertTrue(
+            f.log.entries.value.any {
+                it.message == "Car Bluetooth reconnected — auto-lock cancelled."
+            }
+        )
+    }
+
+    @Test
+    fun cancelWithReasonWhenIdleLogsNothing() = runTest {
+        val f = Fixture(backgroundScope)
+
+        f.controller.cancel(reason = "Car Bluetooth reconnected")
+
+        assertTrue(f.log.entries.value.none { it.message.contains("cancelled") })
+    }
+
+    @Test
     fun dryRunReachesEvaluationButSendsNoCommand() = runTest {
         val f = Fixture(backgroundScope)
         f.settings.value = f.settings.value.copy(

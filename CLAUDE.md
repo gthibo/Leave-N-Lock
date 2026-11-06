@@ -63,7 +63,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 2. **Confirmation (optional):** Activity Recognition (→ walking) and/or geofence distance polling
    during the confirm window. `requireWalkAwayConfirmation` makes them mandatory.
 3. State flow: `IDLE → (ARMED) → CONFIRMING → GRACE → VERIFYING → (AWAITING_CONFIRM) → LOCKING →
-   LOCKED / SKIPPED / NOT_LOCKED_OPEN / SENT_UNVERIFIED / ERROR`; reconnect or cancel → `ABORTED`. When adding a
+   LOCKED / SKIPPED / NOT_LOCKED_OPEN / SENT_UNVERIFIED / ERROR`; reconnect or cancel → `ABORTED` (a car Bluetooth reconnect mid-run logs "Car Bluetooth reconnected —
+   auto-lock cancelled." via `cancel(reason)`). When adding a
    `DetectionState`, also add it to `isTerminal()` in `AutoLockService`.
 4. `AutoLockController` owns the grace timer, the pre-lock status read (up to 3 tries, 15 s
    each), `LockPolicy.decide`, the lock call with a retry window (exponential backoff), the
@@ -183,17 +184,19 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 
 ## 8. Open TODOs / known gaps
 **Where we left off (2026-11-06):** `main` holds everything and is pushed, including the widget
-Unlock… button and the refreshed app icon. Next step is the owner's car test of the live lock
-check (log line "Asking the car directly…"), range in miles, and the widget Unlock flow. Open
-Dependabot PRs: the five GitHub Actions bumps pass CI; the five Gradle bumps (androidx,
-kotlin-ktor, okhttp 5, KSP 2.3, Hilt 2.60) fail and need a coordinated upgrade on their own
-branch. Ideas not started yet, in priority order: US diagnostics export with redaction; Stats
-"Session expires" row; car-reported location. New work goes on its own branch cut from `main`.
+Unlock… button and the refreshed app icon. The GitHub Actions Dependabot bumps are merged.
+**Car test 2026-11-06 (Pixel 11 Pro, Ioniq 5, Armed): passed.** Three auto-locks, each confirmed
+on the first cached verify read about 70 s after walking away; the range in miles and the widget
+Unlock flow look right. One pre-lock status read timed out (15 s) and the retry worked. Next: the five
+Gradle Dependabot bumps (androidx, kotlin-ktor, okhttp 5, KSP 2.3, Hilt 2.60) fail because the
+toolchain is old (Gradle 8.11.1, AGP 8.7.3, Kotlin 2.1.0, compileSdk 35) and need one coordinated
+upgrade on their own branch, then a car re-test. Ideas not started yet, in priority order: US
+diagnostics export with redaction; Stats "Session expires" row; car-reported location. New work
+goes on its own branch cut from `main`.
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
-  only; not yet seen against a real Ioniq 5 (reply shape, timing, `dateTime` freshness).
-- Range: parsed from the US status reply but only verified against the reference libraries, not
-  yet seen on a real Ioniq 5 reply. A missing/unknown unit code is assumed to be miles.
+  only. In the 2026-11-06 car test the cached reads always confirmed first, so it hasn't run
+  against a real Ioniq 5 yet (reply shape, timing, `dateTime` freshness).
 - **Shelved (2026-11-06): US refresh-token grant.** Not worth it: still one call per ~30 min
   (no felt speed-up); the password must stay saved as the fallback, so on-phone exposure is
   unchanged (it only crosses HTTPS less often); and the references disagree on the call

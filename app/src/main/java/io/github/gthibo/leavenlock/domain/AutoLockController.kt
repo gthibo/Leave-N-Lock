@@ -84,8 +84,14 @@ class AutoLockController @Inject constructor(
         machine?.let { advance(it.next(_state.value.detection, DetectionEvent.MovedBeyondGeofence)) }
     }
 
-    fun cancel() {
+    /**
+     * Stops any running evaluation. With a [reason], a run that was actually in progress gets a
+     * log line ("<reason> — auto-lock cancelled."), so it doesn't just vanish from the log.
+     */
+    fun cancel(reason: String? = null) {
+        val wasRunning = runJob?.isActive == true
         runJob?.cancel()
+        if (wasRunning && reason != null) log.add(LogLevel.INFO, "$reason — auto-lock cancelled.")
         machine?.let { advance(it.next(_state.value.detection, DetectionEvent.UserCancelled)) }
         _state.value = _state.value.copy(detection = DetectionState.ABORTED, graceRemaining = 0)
     }

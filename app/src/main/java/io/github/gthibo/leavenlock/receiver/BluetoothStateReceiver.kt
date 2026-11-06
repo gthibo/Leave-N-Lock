@@ -51,7 +51,7 @@ class BluetoothStateReceiver : BroadcastReceiver() {
                         AutoLockService.start(context)
                     }
                     BluetoothDevice.ACTION_ACL_CONNECTED -> {
-                        controller.cancel()
+                        controller.cancel(reason = "Car Bluetooth reconnected")
                         // Arrival: register a battery-friendly geofence around the car so leaving is
                         // detected even without polling or a persistent service.
                         if (settings.useGeofence) {
