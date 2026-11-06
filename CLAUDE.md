@@ -155,6 +155,9 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 
 ## 7. Build & test
 - `./gradlew testDebugUnitTest` · `./gradlew lint` · `./gradlew assembleDebug` · `./gradlew installDebug`
+- On this Windows PC, Android Studio's bundled JDK (25) breaks Gradle: set
+  `JAVA_HOME=C:\Users\mrthi\.jdks\jbr-21.0.11` first. If `app\build` gives AccessDenied, run
+  `gradlew --stop`, delete `app\build`, then build again with `--no-daemon`.
 
 ## 7b. CI (`.github/workflows/`)
 - `ci.yml` — `guard` (required docs incl. this file with a Changelog, ≥ 40 lines; no committed
@@ -164,6 +167,11 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   GitHub Release (signed if the `RELEASE_*` secrets exist).
 
 ## 8. Open TODOs / known gaps
+**Where we left off (2026-11-05):** `main` holds everything and is pushed. `design-system` was
+deleted on GitHub; the local copy equals `main` and can go. Next step is the owner's car test of
+the live lock check (log line "Asking the car directly…"). Ideas not started yet, in priority order:
+US refresh-token grant; US diagnostics export with redaction; Stats "Session expires" row;
+car-reported location. New work goes on its own branch cut from `main`.
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only; not yet seen against a real Ioniq 5 (reply shape, timing, `dateTime` freshness).
