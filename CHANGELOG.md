@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **Removed the "Minimum refresh interval" slider.** It never did anything: LEAVE/LOCK
+  doesn't poll the car on a timer, and it wakes the car only once, at the end of an auto-lock
+  check. Older backups still restore.
 - **Fewer "Lock sent, not verified" results.** If Hyundai's saved status still hasn't caught
   up after the three checks, LEAVE/LOCK asks the car once for a live status before giving up.
   This wakes the car briefly, so it happens only at that last step, never on Home refreshes.

@@ -170,16 +170,21 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 **Where we left off (2026-11-05):** `main` holds everything and is pushed. `design-system` was
 deleted on GitHub; the local copy equals `main` and can go. Next step is the owner's car test of
 the live lock check (log line "Asking the car directly…"). Ideas not started yet, in priority order:
-US refresh-token grant; US diagnostics export with redaction; Stats "Session expires" row;
-car-reported location. New work goes on its own branch cut from `main`.
+US diagnostics export with redaction; Stats "Session expires" row; car-reported location. New
+work goes on its own branch cut from `main`.
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only; not yet seen against a real Ioniq 5 (reply shape, timing, `dateTime` freshness).
-- `AppSettings.minRefreshSeconds` and its Settings slider are not enforced anywhere (left from
-  i5-AutoLock); its description still talks about live polls.
 - Range: parsed from the US status reply but only verified against the reference libraries, not
   yet seen on a real Ioniq 5 reply. A missing/unknown unit code is assumed to be miles.
-- Optional speed-up: US refresh-token grant instead of a full sign-in every ~30 min.
+- **Shelved (2026-11-06): US refresh-token grant.** Not worth it: still one call per ~30 min
+  (no felt speed-up); the password must stay saved as the fallback, so on-phone exposure is
+  unchanged (it only crosses HTTPS less often); and the references disagree on the call
+  (bluelinky: `POST /v2/ac/oauth/token/refresh` with `refresh_token` only;
+  hyundai_kia_connect_api: `POST /v2/ac/oauth/token` with `grant_type: refresh_token` +
+  username/password, falling back to a full sign-in), so it adds an untested path in front of
+  every lock. Revisit only if full sign-ins start causing trouble (lockouts, sign-in emails,
+  rate limits). Today `authenticate()` ignores the `refresh_token` Hyundai returns.
 - Cert-pin hashes and Play `GeofencingClient` at arrival are not done.
 - `ActivityLog` diagnostic messages are hard-coded English (no `Context` in the domain layer).
 
@@ -220,3 +225,8 @@ car-reported location. New work goes on its own branch cut from `main`.
   that worked no longer ends "Lock sent, not verified" just because Hyundai's snapshot lagged.
   Home's pull/refresh button now always asks for the cached read (it passed `force` before, which
   the US client ignored), so it still never wakes the car. 5 new tests (178 total).
+- 2026-11-06 — Removed the dead "Minimum refresh interval" setting (left from i5-AutoLock, never
+  enforced; its copy promised live-poll throttling the app doesn't do). Gone from `AppSettings`,
+  `SettingsBackup` (old backups still restore: `ignoreUnknownKeys`), the ViewModel, the Settings
+  Timing section and `strings.xml`. `SettingsRepository` deletes the stored `min_refresh_seconds`
+  key on the next save.

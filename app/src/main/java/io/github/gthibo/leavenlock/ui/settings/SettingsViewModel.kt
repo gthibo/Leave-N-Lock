@@ -113,7 +113,6 @@ class SettingsViewModel @Inject constructor(
     fun setCustomLockSoundUri(uri: String?) = update { it.copy(customLockSoundUri = uri) }
     fun setLowVoltageAlert(enabled: Boolean) = update { it.copy(lowVoltageAlert = enabled) }
     fun setLowVoltageThreshold(percent: Int) = update { it.copy(lowVoltageThreshold = percent.coerceIn(5, 100)) }
-    fun setMinRefreshSeconds(seconds: Int) = update { it.copy(minRefreshSeconds = seconds.coerceIn(15, 600)) }
     fun setShowAppBadge(enabled: Boolean) = viewModelScope.launch {
         settingsRepo.update { it.copy(showAppBadge = enabled) }
         // Badge visibility is a channel property — recreate it, then re-post the watching

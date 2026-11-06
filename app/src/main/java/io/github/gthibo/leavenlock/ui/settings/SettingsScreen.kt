@@ -280,22 +280,6 @@ fun SettingsScreen(
                     onValueChange = { viewModel.setGrace(it.toInt()) },
                     valueRange = 5f..180f,
                 )
-                PgSlider(
-                    label = stringResource(R.string.set_min_refresh_title),
-                    valueText = formatDuration(settings.minRefreshSeconds),
-                    description = stringResource(R.string.set_min_refresh_sub) + "\n" +
-                        stringResource(R.string.set_min_refresh_value, formatDuration(settings.minRefreshSeconds)),
-                    value = settings.minRefreshSeconds.toFloat(),
-                    onValueChange = { viewModel.setMinRefreshSeconds(it.toInt()) },
-                    valueRange = 15f..600f,
-                )
-                if (settings.minRefreshSeconds < 60) {
-                    Text(
-                        stringResource(R.string.set_min_refresh_warn),
-                        style = PorcelainText.bodySm,
-                        color = Porcelain.colors.warn,
-                    )
-                }
             }
 
             // Low 12V battery warning.
@@ -545,13 +529,6 @@ private fun GroupTitle(title: String, subtitle: String? = null) {
 }
 
 private fun formatMinutes(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)
-
-/** Human-friendly duration for the refresh-interval label, e.g. 45 → "45s", 180 → "3m". */
-private fun formatDuration(seconds: Int): String = when {
-    seconds < 60 -> "${seconds}s"
-    seconds % 60 == 0 -> "${seconds / 60}m"
-    else -> "${seconds / 60}m ${seconds % 60}s"
-}
 
 /** Opens the system battery-optimization list so the user can exempt LEAVE/LOCK. */
 private fun openBatterySettings(context: Context) {

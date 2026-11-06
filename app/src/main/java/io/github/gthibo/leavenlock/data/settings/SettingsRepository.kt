@@ -35,7 +35,8 @@ class SettingsRepository @Inject constructor(
         val PIN_NOTIF = booleanPreferencesKey("pin_notif")
         val AUTO_REFRESH_OPEN = booleanPreferencesKey("auto_refresh_open")
         val AUTO_REFRESH_INTERVAL = intPreferencesKey("auto_refresh_interval")
-        val MIN_REFRESH_SECONDS = intPreferencesKey("min_refresh_seconds")
+        // Removed setting (never enforced); deleted from DataStore on the next save.
+        val LEGACY_MIN_REFRESH_SECONDS = intPreferencesKey("min_refresh_seconds")
         val CUSTOM_SOUND_URI = stringPreferencesKey("custom_sound_uri")
         val LOW_VOLT_ALERT = booleanPreferencesKey("low_volt_alert")
         val LOW_VOLT_THRESHOLD = intPreferencesKey("low_volt_threshold")
@@ -87,9 +88,6 @@ class SettingsRepository @Inject constructor(
         pinNotification = this[Keys.PIN_NOTIF] ?: true,
         autoRefreshOnOpen = this[Keys.AUTO_REFRESH_OPEN] ?: true,
         autoRefreshIntervalMinutes = this[Keys.AUTO_REFRESH_INTERVAL] ?: 0,
-        // Old builds stored this as a 3–30s manual-refresh guard; it now governs LIVE polls, so
-        // migrate too-low values up to the safe default to avoid Hyundai's 503 rate limit.
-        minRefreshSeconds = this[Keys.MIN_REFRESH_SECONDS]?.takeIf { it >= 15 }?.coerceAtMost(600) ?: 180,
         customLockSoundUri = this[Keys.CUSTOM_SOUND_URI],
         lowVoltageAlert = this[Keys.LOW_VOLT_ALERT] ?: true,
         lowVoltageThreshold = this[Keys.LOW_VOLT_THRESHOLD] ?: 40,
@@ -144,7 +142,7 @@ class SettingsRepository @Inject constructor(
             prefs[Keys.PIN_NOTIF] = next.pinNotification
             prefs[Keys.AUTO_REFRESH_OPEN] = next.autoRefreshOnOpen
             prefs[Keys.AUTO_REFRESH_INTERVAL] = next.autoRefreshIntervalMinutes
-            prefs[Keys.MIN_REFRESH_SECONDS] = next.minRefreshSeconds
+            prefs.remove(Keys.LEGACY_MIN_REFRESH_SECONDS)
             next.customLockSoundUri?.let { prefs[Keys.CUSTOM_SOUND_URI] = it } ?: prefs.remove(Keys.CUSTOM_SOUND_URI)
             prefs[Keys.LOW_VOLT_ALERT] = next.lowVoltageAlert
             prefs[Keys.LOW_VOLT_THRESHOLD] = next.lowVoltageThreshold

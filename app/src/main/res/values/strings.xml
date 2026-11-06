@@ -215,10 +215,6 @@
     <string name="set_det_geo_sub">Confirm you moved away from the parked spot.</string>
     <string name="set_geo_radius">Geofence radius: %1$dm</string>
     <string name="set_grace">Grace period: %1$ds</string>
-    <string name="set_min_refresh_title">Minimum refresh interval</string>
-    <string name="set_min_refresh_sub">How often LEAVE/LOCK may run a live poll of the car (forced refresh + the check before locking). Polling too often triggers BlueLink\'s rate limit (temporary 503 errors); in between, the last known status is shown.</string>
-    <string name="set_min_refresh_value">Live poll at most every %1$s</string>
-    <string name="set_min_refresh_warn">⚠ Low values poll the car frequently and may trigger BlueLink rate limiting (temporary 503 errors).</string>
     <string name="sec_low_volt">Low 12V battery warning</string>
     <string name="set_low_volt_title">Warn on low 12V battery</string>
     <string name="set_low_volt_sub">Alert you when the 12V (accessory) battery drops too low — a common EV no-start cause.</string>

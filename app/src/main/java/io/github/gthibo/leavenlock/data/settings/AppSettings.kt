@@ -57,8 +57,6 @@ data class AppSettings(
     val autoRefreshOnOpen: Boolean = true,
     // Periodic background status refresh in minutes (0 = off; min effective 15 via WorkManager).
     val autoRefreshIntervalMinutes: Int = 0,
-    // Minimum seconds between LIVE vehicle polls (forced refresh wakes the car; too often = 503).
-    val minRefreshSeconds: Int = 180,
     val hapticOnLock: Boolean = true,
     val soundOnLock: Boolean = false,
     // Optional custom lock sound (content URI). Null = the built-in EV chime.
