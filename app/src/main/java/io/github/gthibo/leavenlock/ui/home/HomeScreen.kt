@@ -90,6 +90,8 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenHelp: () -> Unit,
     onOpenLogin: () -> Unit = {},
+    unlockRequested: Boolean = false,
+    onUnlockRequestHandled: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -102,6 +104,14 @@ fun HomeScreen(
     val context = LocalContext.current
     // null = no dialog; true = lock; false = unlock.
     var pendingCommand by remember { mutableStateOf<Boolean?>(null) }
+    // The widget's "Unlock…" lands here: show the same confirmation as "Unlock now". The unlock
+    // itself still goes through manualUnlock (PIN, Armed mode, sign-in).
+    LaunchedEffect(unlockRequested) {
+        if (unlockRequested) {
+            pendingCommand = false
+            onUnlockRequestHandled()
+        }
+    }
     LaunchedEffect(lockResult) {
         lockResult?.let {
             android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()

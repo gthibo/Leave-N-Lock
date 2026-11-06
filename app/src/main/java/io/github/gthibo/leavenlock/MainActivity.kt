@@ -1,5 +1,6 @@
 package io.github.gthibo.leavenlock
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,9 +27,14 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    /** The widget's "Unlock…" asked for Home's unlock confirmation; cleared once it shows. */
+    private var unlockRequested by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Only on a fresh launch: a recreated activity keeps its old intent and must not re-ask.
+        if (savedInstanceState == null) unlockRequested = intent.isConfirmUnlock()
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val prefs by themeViewModel.prefs.collectAsStateWithLifecycle()
@@ -49,10 +57,30 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     PermissionGate {
-                        AppNavigation()
+                        AppNavigation(
+                            unlockRequested = unlockRequested,
+                            onUnlockRequestHandled = { unlockRequested = false },
+                        )
                     }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.isConfirmUnlock()) unlockRequested = true
+    }
+
+    private fun Intent?.isConfirmUnlock() = this?.action == ACTION_CONFIRM_UNLOCK
+
+    companion object {
+        /**
+         * Open Home with the unlock confirmation showing. It only opens the dialog: the PIN,
+         * Armed-mode and sign-in checks of the in-app unlock still apply, so another app
+         * sending this intent can't unlock anything.
+         */
+        const val ACTION_CONFIRM_UNLOCK = "io.github.gthibo.leavenlock.CONFIRM_UNLOCK"
     }
 }

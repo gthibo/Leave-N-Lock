@@ -49,7 +49,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   `ActivityLog`, `StatusSummary`.
 - `service/` — `AutoLockService` (foreground, watch mode), `AutoLockNotification`, `NotificationChannels`.
 - `receiver/` — Bluetooth (primary trigger), boot, geofence, activity-transition receivers.
-- `tile/`, `widget/`, `work/StatusRefreshWorker`, `di/AppModule`.
+- `tile/`, `widget/` (`AutoLockWidget`, pure `widgetActionFor` → `WidgetAction`),
+  `work/StatusRefreshWorker`, `di/AppModule`.
 - `ui/` — Compose: `home/`, `settings/`, `login/`, `stats/`, `help/`, `about/`, `onboarding/`,
   `permissions/`, `components/` (`Porcelain.kt`: the shared design pieces — `PgCard`, `PgButton`,
   `PgSwitch`, `PgRadio`, `PgSlider`, `PgLabel`, `SegmentMeter`, `StatTile`, `SettingRow`,
@@ -101,6 +102,9 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 ## 5. Safety model (never bypass)
 - `RunMode.DRY_RUN` (default) runs the whole flow but NEVER sends a real lock. `ARMED` does.
 - The app only ever sends **lock** automatically; unlock is a manual, PIN-confirmed action.
+  The widget's "Unlock…" (shown only when `StatusCache` says LOCKED) never unlocks itself: it
+  launches `MainActivity.ACTION_CONFIRM_UNLOCK`, which only opens Home's unlock dialog; the
+  unlock goes through `HomeViewModel.manualUnlock` (Armed mode, PIN, sign-in). Keep it that way.
 - `demoMode` swaps in `FakeBlueLinkClient`.
 - Always read status and run `LockPolicy.decide` before locking: skip if already locked, engine
   running, unknown/stale status, or (default on) a door/window open.
@@ -148,6 +152,9 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   `Shapes` slots use `CutCornerShape(topEnd = …)` because Material 3 1.3 needs corner-based
   shapes there (`ChamferShape` is still used for cards).
 - The widget is a flat teal-deep surface with 4dp corners (RemoteViews can't draw the chamfer).
+  Its button: "Lock now" on `widget_button_bg` (unlocked/unknown), "Unlock…" on
+  `widget_button_danger_bg` (locked), "Auto-lock running…" while a run is under way.
+  `AutoLockService` redraws the widget when the detection state changes.
 - UI rules in short: tokens only; cards chamfered top-right (16dp, 24dp hero), 4dp max radius
   elsewhere; Exo 2 / Instrument Sans / IBM Plex Mono; no gradients, glows, blurred textures,
   pulsing or heavy shadows; pixel clusters crisp and static; 48dp touch targets; short,
@@ -230,3 +237,8 @@ work goes on its own branch cut from `main`.
   `SettingsBackup` (old backups still restore: `ignoreUnknownKeys`), the ViewModel, the Settings
   Timing section and `strings.xml`. `SettingsRepository` deletes the stored `min_refresh_seconds`
   key on the next save.
+- 2026-11-06 — Widget button follows the saved lock state (`widget/WidgetAction.kt`,
+  `widgetActionFor`): LOCKED → "Unlock…" (danger) which opens Home's existing unlock
+  confirmation via `MainActivity.ACTION_CONFIRM_UNLOCK` (never a one-tap unlock); unlocked or
+  unknown → one-tap "Lock now"; a running auto-lock → "Auto-lock running…" (opens the app).
+  `AutoLockService` refreshes the widget on detection-state changes. 5 new tests.

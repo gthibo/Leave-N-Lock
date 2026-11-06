@@ -166,6 +166,11 @@ class AutoLockService : Service() {
         if (observeJob != null) return
         observeJob = scope.launch {
             controller.state.collect { s ->
+                // The widget's button follows the run (Auto-lock running… / Lock now / Unlock…);
+                // redraw only when the state changes, not on every grace-timer tick.
+                if (s.detection != currentDetection) {
+                    io.github.gthibo.leavenlock.widget.AutoLockWidget.refresh(this@AutoLockService)
+                }
                 currentDetection = s.detection
                 updateNotification(s.detection, s.graceRemaining, s.statusSummary)
                 if (s.detection == DetectionState.LOCKED && !confirmedFeedback) {

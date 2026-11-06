@@ -1,6 +1,7 @@
 package io.github.gthibo.leavenlock.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,25 +28,39 @@ object Routes {
 }
 
 @Composable
-fun AppNavigation(navController: NavHostController = rememberNavController()) {
+fun AppNavigation(
+    navController: NavHostController = rememberNavController(),
+    unlockRequested: Boolean = false,
+    onUnlockRequestHandled: () -> Unit = {},
+) {
     // Show the first-run wizard until it's completed; then the normal app.
     val onboardingVm: OnboardingViewModel = hiltViewModel()
     val completed by onboardingVm.completed.collectAsStateWithLifecycle()
     when (completed) {
         null -> Unit // brief loading; render nothing to avoid a flash
         false -> OnboardingScreen(onFinish = onboardingVm::complete)
-        else -> AppNavHost(navController)
+        else -> AppNavHost(navController, unlockRequested, onUnlockRequestHandled)
     }
 }
 
 @Composable
-private fun AppNavHost(navController: NavHostController) {
+private fun AppNavHost(
+    navController: NavHostController,
+    unlockRequested: Boolean,
+    onUnlockRequestHandled: () -> Unit,
+) {
+    // The widget's "Unlock…" confirms on Home, whatever screen was open.
+    LaunchedEffect(unlockRequested) {
+        if (unlockRequested) navController.popBackStack(Routes.HOME, inclusive = false)
+    }
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
             HomeScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenHelp = { navController.navigate(Routes.HELP) },
                 onOpenLogin = { navController.navigate(Routes.LOGIN) },
+                unlockRequested = unlockRequested,
+                onUnlockRequestHandled = onUnlockRequestHandled,
             )
         }
         composable(Routes.SETTINGS) {

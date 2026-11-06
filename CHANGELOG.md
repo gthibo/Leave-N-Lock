@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- **The widget's button follows the lock state.** When the car is saved as locked, the
+  widget offers "Unlock…" (in the red danger colour) instead of "Lock now". Tapping it never
+  unlocks right away: it opens LEAVE/LOCK on the same "Unlock the car now?" confirmation as
+  Home, with your BlueLink PIN if you set one, and Dry run still sends nothing. Unlocked or
+  unknown keeps one-tap "Lock now". While an auto-lock is running the button reads
+  "Auto-lock running…" and opens the app, where Cancel is.
 - **Removed the "Minimum refresh interval" slider.** It never did anything: LEAVE/LOCK
   doesn't poll the car on a timer, and it wakes the car only once, at the end of an auto-lock
   check. Older backups still restore.

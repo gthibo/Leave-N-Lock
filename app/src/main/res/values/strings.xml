@@ -77,6 +77,9 @@
     <string name="action_already_locked">Already locked</string>
     <string name="action_unlock_now">Unlock now</string>
     <string name="action_already_unlocked">Already unlocked</string>
+    <!-- Widget: the ellipsis says a confirmation follows (the app opens on the unlock dialog). -->
+    <string name="widget_unlock">Unlock…</string>
+    <string name="widget_auto_lock_running">Auto-lock running…</string>
     <string name="msg_copied">Copied to clipboard</string>
     <string name="badge_demo">DEMO</string>
     <string name="badge_dry_run">DRY RUN</string>
