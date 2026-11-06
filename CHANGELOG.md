@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **Updated build tools and libraries.** LEAVE/LOCK is now built with the current Android
+  tools (Gradle 9.8, Android Gradle Plugin 9.5, Kotlin 2.4, Android 17 SDK) and up-to-date
+  libraries, including the network client it uses to talk to Hyundai. Nothing should look or
+  behave differently; this keeps the app buildable and ready for future fixes.
 - **The activity log says when a reconnect cancels an auto-lock.** If your phone reconnects to
   the car's Bluetooth while an auto-lock is running (say, you got back in), the log now shows
   "Car Bluetooth reconnected — auto-lock cancelled." instead of the run just stopping with no

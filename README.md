@@ -72,7 +72,7 @@ Grab the APK from [Releases](../../releases), or build it yourself (below). Andr
   credentials.
 
 ## Build from source
-Requirements: **JDK 17**, Android SDK platform 35 + build-tools 35.0.0 (Android Studio installs
+Requirements: **JDK 17**, Android SDK platform 37 + build-tools 36.0.0 (Android Studio installs
 both). See [docs/TESTING.md](docs/TESTING.md) for a step-by-step setup.
 
 ```bash
