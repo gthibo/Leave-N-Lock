@@ -81,10 +81,8 @@ import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainShape
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 import io.github.gthibo.leavenlock.ui.util.copyToClipboard
+import io.github.gthibo.leavenlock.ui.util.TimeFormat
 import io.github.gthibo.leavenlock.ui.util.toClipboardText
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,6 +162,7 @@ fun HomeScreen(
                         graceTotal = settings.graceSeconds,
                         vehicleName = settings.vehicleNickname,
                         onToggle = viewModel::setEnabled,
+                        onCancel = viewModel::cancel,
                     )
                 }
                 if (vehicleStatus.needsReauth) {
@@ -191,30 +190,18 @@ fun HomeScreen(
                     )
                 }
                 item {
-                    // Simulating in Armed mode on a real account would send a real lock — only
-                    // allow it in Demo or Dry run.
+                    // Simulating in Armed mode on a real account would send a real lock, so the
+                    // button only exists in Demo or Dry run.
                     val armedLive = settings.runMode == RunMode.ARMED && !settings.demoMode
                     Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+                        if (!armedLive && (settings.isConfigured || settings.demoMode)) {
                             PgButton(
-                                text = if (armedLive) stringResource(R.string.home_simulate_off) else stringResource(R.string.home_simulate),
+                                text = stringResource(R.string.home_simulate),
                                 onClick = viewModel::runNow,
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 variant = ButtonVariant.Tonal,
                                 icon = R.drawable.ic_pg_car,
-                                enabled = (settings.isConfigured || settings.demoMode) && !armedLive,
-                            )
-                            PgButton(
-                                text = stringResource(R.string.action_cancel),
-                                onClick = viewModel::cancel,
-                                variant = ButtonVariant.Secondary,
-                            )
-                        }
-                        if (armedLive) {
-                            Text(
-                                stringResource(R.string.home_simulate_hint),
-                                style = PorcelainText.body.copy(fontSize = 14.sp, lineHeight = 20.sp),
-                                color = mutedText,
+                                enabled = !autoLock.detection.isInFlight(),
                             )
                         }
                         if (settings.isConfigured || settings.demoMode) {
@@ -360,14 +347,10 @@ private fun StatusCard(
     graceTotal: Int,
     vehicleName: String?,
     onToggle: (Boolean) -> Unit,
+    onCancel: () -> Unit,
 ) {
     // An evaluation is actively in flight vs. a settled outcome vs. resting.
-    val active = detection == DetectionState.ARMED ||
-        detection == DetectionState.CONFIRMING ||
-        detection == DetectionState.GRACE ||
-        detection == DetectionState.VERIFYING ||
-        detection == DetectionState.AWAITING_CONFIRM ||
-        detection == DetectionState.LOCKING
+    val active = detection.isInFlight()
     PgCard(
         modifier = Modifier.animateContentSize(),
         tone = CardTone.Hero,
@@ -426,6 +409,16 @@ private fun StatusCard(
             )
             active -> SegmentMeter(value = 100, contentDescription = stringResource(R.string.home_meter_busy), segments = 16, signal = true)
             enabled -> SegmentMeter(value = 100, contentDescription = stringResource(R.string.home_watching), segments = 16)
+        }
+
+        // Stop a countdown or lock that's running; nothing to cancel otherwise.
+        if (active) {
+            PgButton(
+                text = stringResource(R.string.action_cancel),
+                onClick = onCancel,
+                modifier = Modifier.fillMaxWidth(),
+                variant = ButtonVariant.Secondary,
+            )
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
@@ -487,16 +480,9 @@ private fun VehicleStatusCard(
                         text = when {
                             ui.loading -> stringResource(R.string.home_refreshing)
 
-                            status != null -> {
-                                val retrieved = ui.lastRefreshEpochMs?.let {
-                                    stringResource(R.string.home_retrieved, relativeTime(it, now, context))
-                                } ?: stringResource(R.string.home_retrieved_unknown)
-                                val reported = status.reportedAtEpochMs?.let {
-                                    stringResource(R.string.home_car_reported, relativeTime(it, now, context))
-                                } ?: stringResource(R.string.home_car_reported_unknown)
-
-                                "$retrieved\n$reported"
-                            }
+                            status != null -> ui.statusAsOfEpochMs?.let {
+                                stringResource(R.string.home_updated, relativeTime(it, now, context))
+                            } ?: stringResource(R.string.home_updated_unknown)
 
                             else -> stringResource(R.string.home_not_checked)
                         },
@@ -520,7 +506,7 @@ private fun VehicleStatusCard(
                 horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
                 verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
             ) {
-                status.rangeKm?.let {
+                status.rangeMiles?.let {
                     AnimatedStatTile(R.drawable.ic_pg_route, stringResource(R.string.home_range_value, it), stringResource(R.string.home_range))
                 }
                 status.twelveVoltPercent?.let {
@@ -609,9 +595,8 @@ private fun ActivityLogCard(log: List<LogEntry>) {
 
 @Composable
 private fun LogRow(entry: LogEntry, modifier: Modifier = Modifier) {
-    val time = remember(entry.timestamp) {
-        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp))
-    }
+    val context = LocalContext.current
+    val time = remember(entry.timestamp) { TimeFormat.clock(context, entry.timestamp, seconds = true) }
     val c = Porcelain.colors
     val color = when (entry.level) {
         LogLevel.SUCCESS -> c.teal
@@ -637,13 +622,22 @@ private fun LogRow(entry: LogEntry, modifier: Modifier = Modifier) {
     }
 }
 
+/** A check or lock is running (as opposed to a settled outcome or resting). */
+private fun DetectionState.isInFlight(): Boolean =
+    this == DetectionState.ARMED ||
+        this == DetectionState.CONFIRMING ||
+        this == DetectionState.GRACE ||
+        this == DetectionState.VERIFYING ||
+        this == DetectionState.AWAITING_CONFIRM ||
+        this == DetectionState.LOCKING
+
 private fun relativeTime(epochMs: Long, now: Long, context: android.content.Context): String {
     val diff = now - epochMs
     return when {
         diff < 45_000 -> context.getString(R.string.time_just_now)
         diff < 3_600_000 -> context.getString(R.string.time_min_ago, (diff / 60_000).coerceAtLeast(1).toInt())
-        diff < 86_400_000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMs))
-        else -> SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(epochMs))
+        diff < 86_400_000 -> TimeFormat.clock(context, epochMs)
+        else -> TimeFormat.dateAndClock(context, epochMs)
     }
 }
 

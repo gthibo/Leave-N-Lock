@@ -34,7 +34,8 @@ import io.github.gthibo.leavenlock.data.settings.RunMode
 data class VehicleStatusUi(
     val loading: Boolean = false,
     val status: VehicleStatus? = null,
-    val lastRefreshEpochMs: Long? = null,
+    /** The card's single "Updated …" time (see [io.github.gthibo.leavenlock.data.status.CachedStatus.statusAsOfEpochMs]). */
+    val statusAsOfEpochMs: Long? = null,
     val error: String? = null,
     /** True when the session expired and the user needs to sign in again. */
     val needsReauth: Boolean = false,
@@ -70,7 +71,13 @@ class HomeViewModel @Inject constructor(
     fun clearNotice() { _notice.value = null }
 
     init {
-
+        // The card always shows the shared status cache, so auto-lock, the background refresh and
+        // manual commands all show up here the moment they are saved.
+        viewModelScope.launch {
+            statusCache.cached.collect { c ->
+                _vehicleStatus.update { it.copy(status = c.toVehicleStatus(), statusAsOfEpochMs = c.statusAsOfEpochMs()) }
+            }
+        }
         // Pull a fresh snapshot on open (respects the auto-refresh-on-open setting).
         refreshStatus(force = false)
         // Service start + WorkManager scheduling do disk I/O — keep them off the main thread.
@@ -124,16 +131,10 @@ class HomeViewModel @Inject constructor(
         when (val result = client.lock(vehicleId)) {
             is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Success -> {
                 _lockResult.value = "Locked ✓"
-                // Optimistic UI: cached endpoint won't reflect the new state until the car reports
-                // back to Hyundai (can be minutes, longer under 503 cooldown). Update locally and
-                // skip an immediate refresh — a fresh cached read would overwrite this with stale.
-                _vehicleStatus.update { ui ->
-                    val next = ui.status?.copy(
-                        lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.LOCKED,
-                        anyDoorOpen = false,
-                        timestamp = System.currentTimeMillis(),
-                    )
-                    ui.copy(status = next, lastRefreshEpochMs = System.currentTimeMillis())
+                // Hyundai's cached snapshot lags the command by minutes; saving it as a command
+                // keeps older reads from flipping the card back (see CachedStatus.after).
+                saveCommandResult(s) {
+                    it.copy(lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.LOCKED, anyDoorOpen = false)
                 }
             }
             io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.RateLimited -> _lockResult.value = "Rate-limited — try again shortly."
@@ -168,12 +169,8 @@ class HomeViewModel @Inject constructor(
         when (val result = client.unlock(vehicleId)) {
             is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Success -> {
                 _lockResult.value = "Unlocked ✓"
-                _vehicleStatus.update { ui ->
-                    val next = ui.status?.copy(
-                        lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.UNLOCKED,
-                        timestamp = System.currentTimeMillis(),
-                    )
-                    ui.copy(status = next, lastRefreshEpochMs = System.currentTimeMillis())
+                saveCommandResult(s) {
+                    it.copy(lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.UNLOCKED)
                 }
             }
             io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.RateLimited -> _lockResult.value = "Rate-limited — try again shortly."
@@ -186,10 +183,21 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** Save a finished lock/unlock to the shared cache (card, widget, notification). */
+    private suspend fun saveCommandResult(s: AppSettings, change: (VehicleStatus) -> VehicleStatus) {
+        val current = _vehicleStatus.value.status ?: return
+        val next = change(current)
+        statusCache.saveStatus(
+            next,
+            StatusSummary.build(next, s.notificationFields, StatusSummary.Labels.from(appContext)),
+            fromCommand = true,
+        )
+    }
+
     /** Switch the active vehicle (per-vehicle picker on Home). */
     fun selectVehicle(v: io.github.gthibo.leavenlock.data.settings.KnownVehicle) = viewModelScope.launch {
         settingsRepo.update { it.copy(vehicleId = v.id, vehicleNickname = v.nickname) }
-        _vehicleStatus.update { it.copy(status = null, lastRefreshEpochMs = null) }
+        statusCache.clear()
         refreshStatus(force = false)
     }
 
@@ -235,13 +243,12 @@ class HomeViewModel @Inject constructor(
                 // notification/widget summary is built from the merged status too.
                 val merged = fresh
                 val low = isLowVoltage(merged, s)
+                // The card's status and time arrive through the cache collector in init.
                 _vehicleStatus.update { ui ->
                     ui.copy(
                         loading = false,
                         error = null,
                         needsReauth = false,
-                        status = merged,
-                        lastRefreshEpochMs = System.currentTimeMillis(),
                         lowVoltage = low,
                     )
                 }

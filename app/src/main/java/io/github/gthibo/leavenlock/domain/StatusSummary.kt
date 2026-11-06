@@ -19,7 +19,7 @@ object StatusSummary {
         val climateOn: String = "Climate on",
         val climateOff: String = "Climate off",
         val twelveVolt: String = "12V",
-        val rangeUnit: String = "km",
+        val rangeUnit: String = "mi",
     ) {
         companion object {
             val ENGLISH = Labels()
@@ -50,7 +50,7 @@ object StatusSummary {
                     LockState.UNKNOWN -> labels.lockUnknown
                 }
                 NotificationField.EV_BATTERY -> status.evBatteryPercent?.let { parts += "$it%" }
-                NotificationField.RANGE -> status.rangeKm?.let { parts += "$it ${labels.rangeUnit}" }
+                NotificationField.RANGE -> status.rangeMiles?.let { parts += "$it ${labels.rangeUnit}" }
                 NotificationField.ENGINE -> parts += if (status.engineRunning) labels.engineOn else labels.engineOff
                 NotificationField.TWELVE_VOLT -> status.twelveVoltPercent?.let { parts += "${labels.twelveVolt} $it%" }
                 NotificationField.CLIMATE -> status.climateOn?.let { parts += if (it) labels.climateOn else labels.climateOff }

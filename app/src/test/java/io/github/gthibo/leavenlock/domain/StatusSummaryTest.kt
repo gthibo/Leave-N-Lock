@@ -14,7 +14,7 @@ class StatusSummaryTest {
         batteryCharging = false,
         timestamp = 0L,
         evBatteryPercent = 72,
-        rangeKm = 318,
+        rangeMiles = 318,
         twelveVoltPercent = 88,
         climateOn = false,
     )
@@ -25,7 +25,7 @@ class StatusSummaryTest {
             status,
             setOf(NotificationField.RANGE, NotificationField.LOCK_STATE, NotificationField.EV_BATTERY),
         )
-        assertEquals("Unlocked · 72% · 318 km", summary)
+        assertEquals("Unlocked · 72% · 318 mi", summary)
     }
 
     @Test
@@ -35,7 +35,7 @@ class StatusSummaryTest {
 
     @Test
     fun skipsMissingValues() {
-        val bare = status.copy(evBatteryPercent = null, rangeKm = null)
+        val bare = status.copy(evBatteryPercent = null, rangeMiles = null)
         val summary = StatusSummary.build(
             bare,
             setOf(NotificationField.EV_BATTERY, NotificationField.RANGE, NotificationField.TWELVE_VOLT),

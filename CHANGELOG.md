@@ -10,7 +10,23 @@
   "Dynamic color" (wallpaper colours) switch was removed so the app keeps its own palette.
 - **Clearer settings:** Dry run and Armed now say what they do on a second line ("Never sends
   a real lock", "Locks the car for real").
-- No changes to how detection or locking works.
+- **The Home card now updates after an auto-lock.** The card reads the same saved status as
+  the widget and notification, so auto-locks and background refreshes show up right away. As
+  soon as Hyundai reports a lock or unlock command done, the card shows it, and an older status
+  from Hyundai (which often lags by minutes) can't flip it back for 30 minutes.
+- **Auto-lock checks the result longer:** after the lock command it checks Hyundai's status up
+  to 3 times, 20 seconds apart, before saying "Lock sent, not verified". That outcome is no
+  longer shown as an error. It still never sends a second lock.
+- **One time on the card:** "Retrieved …" and "Car reported …" are replaced by a single
+  "Updated …" line (the newer of the car's last report and your last command).
+- **Simpler Home screen:** in Armed mode the "Simulation off (Armed)" button and its hint are
+  gone. Cancel now appears in the System status card only while a countdown or lock is running.
+- **12-hour times:** every clock time follows your phone's setting: 12-hour with AM/PM, or
+  24-hour if you've turned that on.
+- **Quieter activity log:** the temporary "US status report time" lines are gone.
+- **Range on the Home card, in miles.** The card now shows the car's remaining driving range
+  from Hyundai (it only appeared in demo mode before, and in km). The notification and widget
+  summary also show range in miles.
 
 ## [0.1.0] - 2026-11-04
 

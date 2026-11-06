@@ -47,11 +47,9 @@ import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainShape
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
+import io.github.gthibo.leavenlock.ui.util.TimeFormat
 import io.github.gthibo.leavenlock.ui.util.copyToClipboard
 import io.github.gthibo.leavenlock.ui.util.toClipboardText
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 
 private data class ConfirmAction(val title: String, val message: String, val action: () -> Unit)
@@ -241,7 +239,7 @@ private fun OutcomePixel(color: Color) {
 
 @Composable
 private fun ApiCallRow(call: ApiCall) {
-    val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(call.timestamp))
+    val time = TimeFormat.clock(LocalContext.current, call.timestamp, seconds = true)
     val c = Porcelain.colors
     val color = when (call.outcome) {
         ApiOutcome.SUCCESS -> c.teal
@@ -263,7 +261,7 @@ private fun ApiCallRow(call: ApiCall) {
 
 @Composable
 private fun LogRow(entry: LogEntry) {
-    val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp))
+    val time = TimeFormat.clock(LocalContext.current, entry.timestamp, seconds = true)
     val c = Porcelain.colors
     val color = when (entry.level) {
         LogLevel.SUCCESS -> c.teal

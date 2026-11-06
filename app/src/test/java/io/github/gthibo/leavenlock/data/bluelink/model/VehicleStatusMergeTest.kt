@@ -19,7 +19,7 @@ class VehicleStatusMergeTest {
         batteryCharging = null,
         timestamp = 0L,
         evBatteryPercent = ev,
-        rangeKm = range,
+        rangeMiles = range,
         twelveVoltPercent = twelve,
         anyDoorOpen = door,
     )
@@ -31,7 +31,7 @@ class VehicleStatusMergeTest {
         val merged = fresh.mergedOnto(old)
         assertEquals(LockState.LOCKED, merged.lockState) // lock state always from fresh
         assertEquals(72, merged.evBatteryPercent)
-        assertEquals(318, merged.rangeKm)
+        assertEquals(318, merged.rangeMiles)
         assertEquals(88, merged.twelveVoltPercent)
     }
 
@@ -41,7 +41,7 @@ class VehicleStatusMergeTest {
         val fresh = status(ev = 80, range = 300)
         val merged = fresh.mergedOnto(old)
         assertEquals(80, merged.evBatteryPercent)
-        assertEquals(300, merged.rangeKm)
+        assertEquals(300, merged.rangeMiles)
     }
 
     @Test
@@ -49,7 +49,7 @@ class VehicleStatusMergeTest {
         val fresh = status(ev = 42)
         val merged = fresh.mergedOnto(null)
         assertEquals(42, merged.evBatteryPercent)
-        assertNull(merged.rangeKm)
+        assertNull(merged.rangeMiles)
     }
 
     @Test

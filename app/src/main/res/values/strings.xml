@@ -61,7 +61,7 @@
     <string name="summary_climate_on">Climate on</string>
     <string name="summary_climate_off">Climate off</string>
     <string name="summary_twelve_volt">12V</string>
-    <string name="summary_range_unit">km</string>
+    <string name="summary_range_unit">mi</string>
 
     <!-- Permissions -->
     <string name="perm_title">LEAVE/LOCK needs a few permissions</string>
@@ -129,21 +129,17 @@
     <string name="home_vehicle">VEHICLE</string>
     <string name="home_refreshing">Refreshing…</string>
     <string name="home_not_checked">Not checked yet</string>
-    <string name="home_retrieved">Retrieved %1$s</string>
-    <string name="home_retrieved_unknown">Retrieval time unknown</string>
-    <string name="home_car_reported">Car reported %1$s</string>
-    <string name="home_car_reported_unknown">Car report time not available</string>
+    <string name="home_updated">Updated %1$s</string>
+    <string name="home_updated_unknown">Update time unknown</string>
     <string name="home_drive_battery">Drive battery</string>
     <string name="home_range">Range</string>
-    <string name="home_range_value">%1$d km</string>
+    <string name="home_range_value">%1$d mi</string>
     <string name="home_twelve_volt">12V</string>
     <string name="home_engine">Engine</string>
     <string name="home_door_open">A door appears to be open.</string>
     <string name="home_parked_near">Parked near %1$s</string>
     <string name="cd_open_maps">Open in Maps</string>
     <string name="home_simulate">Simulate leaving</string>
-    <string name="home_simulate_off">Simulation off (Armed)</string>
-    <string name="home_simulate_hint">Armed on a real account would lock your car for real. Switch to Dry run or Demo to simulate safely.</string>
     <string name="home_no_activity">No activity yet. Enable LEAVE/LOCK and try \"Simulate leaving\".</string>
     <string name="home_refresh_status">Refresh status</string>
     <string name="home_refreshing_cd">Refreshing</string>

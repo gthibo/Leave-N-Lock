@@ -5,6 +5,7 @@ import io.github.gthibo.leavenlock.data.bluelink.model.CommandResult
 import io.github.gthibo.leavenlock.data.bluelink.model.LockState
 import io.github.gthibo.leavenlock.data.bluelink.model.Vehicle
 import io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus
+import io.github.gthibo.leavenlock.data.bluelink.model.kmToMiles
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -42,6 +43,8 @@ class UsBlueLinkClient(
         val TRANSACTION_HEADERS = listOf("tmsTid", "transactionId", "Xid")
         const val POLL_ATTEMPTS = 10
         const val POLL_INTERVAL_MS = 3_000L
+        /** Hyundai distance unit code for kilometres (2 and 3 are miles). */
+        const val UNIT_KM = 1
     }
 
     private val mutex = Mutex()
@@ -286,7 +289,6 @@ class UsBlueLinkClient(
                 }.getOrNull()
             }
             ?: 0L
-        diag(reportTimeDiagnostic(status, sourceTimestamp))
         return VehicleStatus(
             lockState = when (flag(primitive("doorLock"))) {
                 true -> LockState.LOCKED
@@ -305,8 +307,30 @@ class UsBlueLinkClient(
                 as? JsonPrimitive)?.intOrNull,
             anyDoorOpen = anyOpen("doorOpen"),
             anyWindowOpen = anyOpen("windowOpen"),
+            rangeMiles = rangeMiles(ev, status["dte"] as? JsonObject),
         )
     }
+
+    /**
+     * Remaining range in miles. EVs: `evStatus.drvDistance[0].rangeByFuel.totalAvailableRange`;
+     * otherwise `dte` (as in bluelinky / hyundai_kia_connect_api). Each is `{value, unit}`; unit
+     * codes per hyundai_kia_connect_api `DISTANCE_UNITS`: 1 = km, 2 or 3 = miles. A missing or
+     * unknown unit is taken as miles (the US API's default; bluelinky ignores the unit).
+     */
+    private fun rangeMiles(ev: JsonObject?, dte: JsonObject?): Int? {
+        val total = ((ev?.get("drvDistance") as? JsonArray)?.firstOrNull() as? JsonObject)
+            ?.let { it["rangeByFuel"] as? JsonObject }
+            ?.let { it["totalAvailableRange"] as? JsonObject }
+        val range = total?.takeIf { distanceValue(it) != null } ?: dte ?: return null
+        val value = distanceValue(range) ?: return null
+        return when ((range["unit"] as? JsonPrimitive)?.intOrNull) {
+            UNIT_KM -> kmToMiles(value)
+            else -> Math.round(value).toInt()
+        }
+    }
+
+    private fun distanceValue(o: JsonObject): Double? =
+        (o["value"] as? JsonPrimitive)?.doubleOrNull?.takeIf { it >= 0.0 }
 
     override suspend fun lock(vehicleId: String): CommandResult =
         sendDoorCommand(vehicleId, lock = true)
@@ -440,29 +464,6 @@ class UsBlueLinkClient(
         val message = json["errorMessage"]?.jsonPrimitive?.contentOrNull
             ?.take(120)?.takeIf { it.isNotBlank() } ?: "no message"
         return "Hyundai error $code: $message"
-    }
-
-    /**
-     * Temporary diagnostic: the raw report-time field(s) of a US status response, so the real
-     * format can be seen in the Activity log. Only date/time-named primitive fields are shown.
-     */
-    private fun reportTimeDiagnostic(status: JsonObject, parsed: Long): String {
-        val raw = (status["dateTime"] as? JsonPrimitive)?.contentOrNull
-        val outcome = when {
-            raw == null -> "missing"
-            parsed > 0L -> "parsed OK"
-            else -> "NOT parsed"
-        }
-        val timeFields = status.entries
-            .filter { (key, value) ->
-                value is JsonPrimitive &&
-                    (key.contains("date", ignoreCase = true) || key.contains("time", ignoreCase = true))
-            }
-            .joinToString(", ") { (key, value) ->
-                "$key=\"${(value as JsonPrimitive).content.take(40)}\""
-            }
-            .ifEmpty { "none" }
-        return "US status report time: dateTime=${raw?.let { "\"${it.take(40)}\"" } ?: "null"} ($outcome) | time fields: $timeFields"
     }
 
     private fun clearMemory() {

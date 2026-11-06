@@ -47,7 +47,7 @@ class FakeBlueLinkClient @Inject constructor() : BlueLinkClient {
             batteryCharging = false,
             timestamp = System.currentTimeMillis(),
             evBatteryPercent = 72,
-            rangeKm = 318,
+            rangeMiles = 198,
             climateOn = false,
             twelveVoltPercent = 88,
             anyDoorOpen = lockState.get() == LockState.UNLOCKED,

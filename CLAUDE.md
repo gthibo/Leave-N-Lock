@@ -32,7 +32,11 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 - `data/device/` — `BluetoothDevices` (bonded devices for the car picker).
 - `data/location/` — `LocationHelper` (last location + reverse-geocoded parked label).
 - `data/detection/` — `ActivityRecognitionManager`, `GeofenceManager`.
-- `data/status/` — `StatusCache` (last full status for Home, widget and notification).
+- `data/status/` — `StatusCache` (last full status; the single source for the Home card, widget
+  and notification). Save command results with `saveStatus(…, fromCommand = true)`: for
+  `CachedStatus.COMMAND_HOLD_MS` (30 min) a plain read the car reported before that command, or
+  with no report time, keeps the command's lock/door state (`CachedStatus.after`). The cache holds
+  one vehicle; `clear()` on vehicle switch.
 - `data/metrics/` — `ApiMetrics` (persisted telemetry: op name, duration, outcome only).
 - `data/backup/` — `BackupManager` (non-secret settings export/restore).
 - `data/sound/` — `EvChime`, `LockSound`.
@@ -63,7 +67,11 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 4. `AutoLockController` owns the grace timer, the pre-lock status read (up to 3 tries, 15 s
    each), `LockPolicy.decide`, the lock call with a retry window (exponential backoff), the
    post-lock verify, and the one-off departure / failure notifications (`failAndNotify`), so a
-   give-up is never silent.
+   give-up is never silent. When Hyundai reports the lock command done, the controller saves the
+   LOCKED status to `StatusCache` as a command right away (the Home card updates like a manual
+   lock). Verify then reads cached status up to `VERIFY_ATTEMPTS` (3) times, `VERIFY_PAUSE_MS`
+   (20 s) apart; `LOCKED` only on a newer, fresh LOCKED read, otherwise `SENT_UNVERIFIED` (not
+   `ERROR`). Verification never sends another command.
 
 ### 4b. US BlueLink client (`data/bluelink/us/UsBlueLinkClient`)
 Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_connect_api` and
@@ -74,6 +82,11 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 - **Vehicles:** `GET /ac/v2/enrollment/details/{username}` (generation, VIN, registration id).
 - **Status:** cached vehicle status (`refresh: false`). `dateTime` → `timestamp` +
   `reportedAtEpochMs`; `LockPolicy` skips if the report is missing, in the future or > 5 min old.
+- **Range:** `evStatus.drvDistance[0].rangeByFuel.totalAvailableRange`, else `dte`, each
+  `{value, unit}`; unit 1 = km (converted), 2/3 = miles (`DISTANCE_UNITS` in
+  hyundai_kia_connect_api). Stored as `VehicleStatus.rangeMiles`; the app is miles-only (Home tile
+  "%d mi", notification/widget summary "mi"). `StatusCache` key `range_mi`; an old `range_km`
+  value is converted km → mi when read and removed on the next write.
 - **Lock/unlock:** `POST /ac/v2/rcs/rdo/off|on` with vehicle headers + `blueLinkServicePin`, body
   `{userName, vin}`; then poll `GET /ac/v2/rmt/getRunningStatus` (10 × 3 s) by transaction id.
   `SUCCESS` → Success, `ERROR`/`errorCode` → Failure, 429 → RateLimited, 401 → Failure + fresh
@@ -103,6 +116,10 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 - ViewModels expose `StateFlow`; collect with `collectAsStateWithLifecycle`. Blocking
   Keystore/disk work runs on `Dispatchers.IO`.
 - Request permissions contextually (`ui/permissions/PermissionGate`).
+- Clock times on screen go through `ui/util/TimeFormat` (follows the phone's 12/24-hour setting;
+  12-hour with AM/PM by default). Never hard-code `"HH:mm"`. Exceptions: the clipboard log export
+  and backup filenames keep fixed 24-hour formats.
+- The Home vehicle card shows one time, "Updated …" = `CachedStatus.statusAsOfEpochMs()`.
 - Before changing behavior, trace every reader, test, screen, notification and widget it touches.
 - Keep `LockPolicy`, `LockStateMachine`, `AutoLockController`, `UsBlueLinkClient` and the fake
   client tests green.
@@ -143,9 +160,12 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 
 ## 8. Open TODOs / known gaps
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
-- US `status(forceRefresh)` reads Hyundai's cached snapshot; if it updates slowly after a lock,
-  the run can end "Lock sent, not confirmed" even though the car locked. A live refresh
-  (`refresh: true`) is supported by the reference library but not used yet.
+- US `status(forceRefresh)` reads Hyundai's cached snapshot; if it hasn't updated within the
+  ~40 s verify window, the run ends "Lock sent, not verified" even though the car locked (the
+  card still shows Locked). A live refresh (`refresh: true`) is supported by the reference
+  library but not used yet.
+- Range: parsed from the US status reply but only verified against the reference libraries, not
+  yet seen on a real Ioniq 5 reply. A missing/unknown unit code is assumed to be miles.
 - Optional speed-up: US refresh-token grant instead of a full sign-in every ~30 min.
 - Cert-pin hashes and Play `GeofencingClient` at arrival are not done.
 - `ActivityLog` diagnostic messages are hard-coded English (no `Context` in the domain layer).
@@ -168,3 +188,16 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   notification accent restyled; old gradients, glows and pixel textures (`Theme.kt`, `Color.kt`,
   `Brand.kt`, `PixelDecor.kt`) removed. User-facing name is now LEAVE/LOCK. No locking-logic
   changes; two controller notice texts renamed and their two test assertions updated.
+- 2026-11-05 — Home card wired to `StatusCache` (it had only shown its own fetches, so auto-lock
+  results never reached it). Command results saved with `fromCommand` and held over older reads
+  (`CachedStatus.after`, `COMMAND_HOLD_MS`); `lastLockedAt` is now stamped only when the state
+  becomes LOCKED or on a lock command. Auto-lock saves LOCKED on command success, verify retries
+  3× / 20 s, unverified ends `SENT_UNVERIFIED`. Card shows one "Updated …" time. Armed-mode
+  simulate button + hint removed; Cancel lives in the status card while in flight. New
+  `ui/util/TimeFormat` (device 12/24 h) for Home and Stats. Temporary "US status report time"
+  diagnostic removed from `UsBlueLinkClient`.
+- 2026-11-05 — Real range on the Home card, in miles: `UsBlueLinkClient` parses
+  `totalAvailableRange` (or `dte`) with its unit code; `VehicleStatus.rangeKm` → `rangeMiles`
+  (merge, `CachedStatus`, `StatusSummary`, Home tile, fake client 198 mi). Cache key `range_km` →
+  `range_mi` with a one-time km → mi read. `StatusCache.read`/`write` moved to its companion so
+  tests round-trip them. New `kmToMiles` in `model/`.

@@ -124,6 +124,16 @@ class AutoLockControllerTest {
         )
     }
 
+    /** Both verification re-checks: 2 pauses of 20 s (AutoLockController.VERIFY_PAUSE_MS). */
+    private val VERIFY_RETRIES_MS = 2 * 20_000L
+
+    /** One plain status save (the pre-lock read) and one LOCKED save marked as a command. */
+    private fun assertPreLockAndCommandCached(f: Fixture) {
+        coVerify(exactly = 2) { f.cache.saveStatus(any(), any(), any()) }
+        coVerify(exactly = 1) { f.cache.saveStatus(any(), any(), false) }
+        coVerify(exactly = 1) { f.cache.saveStatus(match { it.lockState == LockState.LOCKED }, any(), true) }
+    }
+
     @Test
     fun dryRunReachesEvaluationButSendsNoCommand() = runTest {
         val f = Fixture(backgroundScope)
@@ -219,7 +229,7 @@ class AutoLockControllerTest {
                 it.message.contains("Dry Run is selected")
             }
         )
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        coVerify(exactly = 1) { f.cache.saveStatus(any(), any(), any()) }
     }
 
     @Test
@@ -237,17 +247,17 @@ class AutoLockControllerTest {
         runCurrent()
         advanceTimeBy(1_000)
         runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
 
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
-        coVerify(exactly = 2) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
         assertEquals(
-            DetectionState.ERROR,
+            DetectionState.SENT_UNVERIFIED,
             f.controller.state.value.detection,
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-
-        // Only the pre-command status should have been cached.
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        assertPreLockAndCommandCached(f)
     }
 
     @Test
@@ -259,15 +269,47 @@ class AutoLockControllerTest {
         runCurrent()
         advanceTimeBy(1_000)
         runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
 
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
-        coVerify(exactly = 2) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
         assertEquals(
-            DetectionState.ERROR,
+            DetectionState.SENT_UNVERIFIED,
             f.controller.state.value.detection,
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        assertPreLockAndCommandCached(f)
+    }
+
+    @Test
+    fun verificationThatCatchesUpOnALaterTryConfirmsLocked() = runTest {
+        val f = Fixture(backgroundScope)
+        val preLockTime = System.currentTimeMillis() - 10_000L
+        val postLockTime = System.currentTimeMillis() - 1_000L
+        var reads = 0
+        coEvery { f.client.status(any(), any()) } coAnswers {
+            reads++
+            // Hyundai's snapshot still shows the pre-lock state on the first check.
+            if (reads <= 2) f.unlocked(preLockTime) else f.locked(postLockTime)
+        }
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        // The card already shows the lock while verification keeps checking.
+        coVerify(exactly = 1) { f.cache.saveStatus(match { it.lockState == LockState.LOCKED }, any(), true) }
+        assertEquals(DetectionState.LOCKING, f.controller.state.value.detection)
+
+        advanceTimeBy(20_000)
+        runCurrent()
+
+        coVerify(exactly = 1) { f.client.lock("test-vehicle") }
+        coVerify(exactly = 3) { f.client.status("test-vehicle", false) }
+        assertEquals(DetectionState.LOCKED, f.controller.state.value.detection)
+        assertNotNull(f.controller.state.value.lastLockAtEpochMs)
     }
 
     @Test
@@ -305,7 +347,7 @@ class AutoLockControllerTest {
         assertTrue(stampedTime!! >= postLockTime)
 
         // Both pre-lock status and verified locked status are cached.
-        coVerify(exactly = 2) { f.cache.saveStatus(any(), any()) }
+        coVerify(exactly = 2) { f.cache.saveStatus(any(), any(), any()) }
 
         assertTrue(
             f.log.entries.value.any {
@@ -331,17 +373,18 @@ class AutoLockControllerTest {
         runCurrent()
         advanceTimeBy(1_000)
         runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
 
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
-        coVerify(exactly = 2) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
         assertEquals(
-            DetectionState.ERROR,
+            DetectionState.SENT_UNVERIFIED,
             f.controller.state.value.detection,
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
 
-        // Only the pre-command status should be cached.
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        assertPreLockAndCommandCached(f)
 
         assertTrue(
             f.log.entries.value.any {
@@ -368,15 +411,17 @@ class AutoLockControllerTest {
         runCurrent()
         advanceTimeBy(1_000)
         runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
 
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
-        coVerify(exactly = 2) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
         assertEquals(
-            DetectionState.ERROR,
+            DetectionState.SENT_UNVERIFIED,
             f.controller.state.value.detection,
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        assertPreLockAndCommandCached(f)
 
         assertTrue(
             f.log.entries.value.any {
@@ -403,15 +448,17 @@ class AutoLockControllerTest {
         runCurrent()
         advanceTimeBy(1_000)
         runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
 
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
-        coVerify(exactly = 2) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
         assertEquals(
-            DetectionState.ERROR,
+            DetectionState.SENT_UNVERIFIED,
             f.controller.state.value.detection,
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        assertPreLockAndCommandCached(f)
 
         assertTrue(
             f.log.entries.value.any {
@@ -1061,8 +1108,8 @@ class AutoLockControllerTest {
         )
         assertNull(f.controller.state.value.lastLockAtEpochMs)
 
-        // Only the pre-command status is cached; no "locked" snapshot is fabricated.
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        // Hyundai reported the command done, so the card shows it (as a command, not a confirmed read).
+        assertPreLockAndCommandCached(f)
         assertTrue(
             f.log.entries.value.any {
                 it.message.contains("Verification is disabled. Not recording a confirmed lock.")
@@ -1185,8 +1232,8 @@ class AutoLockControllerTest {
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
         assertEquals(DetectionState.ABORTED, f.controller.state.value.detection)
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        // Only the pre-command status was cached; no "locked" snapshot was recorded.
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        // The command itself went through, so the card shows it; no confirmed lock is recorded.
+        assertPreLockAndCommandCached(f)
         assertTrue(
             f.log.entries.value.any { it.message.contains("Watching is off") }
         )
@@ -1480,7 +1527,7 @@ class AutoLockControllerTest {
         coVerify(exactly = 1) { f.client.lock("test-vehicle") }
         assertEquals(DetectionState.ERROR, f.controller.state.value.detection)
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        coVerify(exactly = 1) { f.cache.saveStatus(any(), any()) }
+        coVerify(exactly = 1) { f.cache.saveStatus(any(), any(), any()) }
         assertTrue(
             f.log.entries.value.any {
                 it.message.contains("Not signed in — please log in again.")
@@ -1606,7 +1653,7 @@ class AutoLockControllerTest {
         coVerify(exactly = 0) { f.client.lock(any()) }
         assertEquals(DetectionState.ERROR, f.controller.state.value.detection)
         assertNull(f.controller.state.value.lastLockAtEpochMs)
-        coVerify(exactly = 0) { f.cache.saveStatus(any(), any()) }
+        coVerify(exactly = 0) { f.cache.saveStatus(any(), any(), any()) }
         assertTrue(
             f.log.entries.value.any {
                 it.message.contains("Could not read vehicle status: Test read failure")
@@ -1803,8 +1850,10 @@ class AutoLockControllerTest {
             runCurrent()
             advanceTimeBy(1_000)
             runCurrent()
+            advanceTimeBy(VERIFY_RETRIES_MS)
+            runCurrent()
 
-            assertEquals(DetectionState.ERROR, f.controller.state.value.detection)
+            assertEquals(DetectionState.SENT_UNVERIFIED, f.controller.state.value.detection)
             // One command only; the notification must not trigger another.
             coVerify(exactly = 1) { f.client.lock("test-vehicle") }
             assertNull(f.controller.state.value.lastLockAtEpochMs)

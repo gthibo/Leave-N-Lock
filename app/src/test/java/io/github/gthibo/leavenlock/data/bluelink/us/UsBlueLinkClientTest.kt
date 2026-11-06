@@ -363,48 +363,41 @@ class UsBlueLinkClientTest {
         assertFalse(text.contains("me@example.com"))
     }
 
-    // ---- Report-time diagnostic (to learn Hyundai US's real dateTime format) ----
+    // ---- Report time parsing ----
 
     private fun statusWith(dateTimeField: String) =
         """{"vehicleStatus":{"doorLock":true,"engine":false$dateTimeField,"lastStatusDate":"20261103140500"}}"""
 
-    private suspend fun statusLog(dateTimeField: String): Pair<Long, String> {
-        val log = mutableListOf<String>()
-        val (c, _) = client(statusJson = statusWith(dateTimeField), diag = { log += it })
+    private suspend fun statusTimestamp(dateTimeField: String): Long {
+        val (c, _) = client(statusJson = statusWith(dateTimeField))
         c.signIn()
-        val status = c.status(regId, forceRefresh = false)
-        return status.timestamp to log.single { it.startsWith("US status report time") }
+        return c.status(regId, forceRefresh = false).timestamp
     }
 
     @Test
-    fun reportTimeWithZoneParsesAndIsLogged() = runTest {
-        val (ts, line) = statusLog(""","dateTime":"2026-11-03T14:05:00Z"""")
+    fun reportTimeWithZoneParses() = runTest {
+        val ts = statusTimestamp(""","dateTime":"2026-11-03T14:05:00Z"""")
         assertEquals(java.time.Instant.parse("2026-11-03T14:05:00Z").toEpochMilli(), ts)
-        assertTrue(line, line.contains("""dateTime="2026-11-03T14:05:00Z" (parsed OK)"""))
-        assertTrue(line, line.contains("""lastStatusDate="20261103140500""""))
     }
 
     @Test
-    fun unparseableReportTimeIsLoggedRaw() = runTest {
-        // Current behaviour, pinned until the real format is known: no zone -> unknown time.
-        val (ts, line) = statusLog(""","dateTime":"2026-11-03T14:05:00"""")
-        assertEquals(0L, ts)
-        assertTrue(line, line.contains("""dateTime="2026-11-03T14:05:00" (NOT parsed)"""))
+    fun unparseableReportTimeIsUnknown() = runTest {
+        // No zone -> unknown time.
+        assertEquals(0L, statusTimestamp(""","dateTime":"2026-11-03T14:05:00""""))
     }
 
     @Test
-    fun missingReportTimeIsLogged() = runTest {
-        val (ts, line) = statusLog("")
-        assertEquals(0L, ts)
-        assertTrue(line, line.contains("dateTime=null (missing)"))
+    fun missingReportTimeIsUnknown() = runTest {
+        assertEquals(0L, statusTimestamp(""))
     }
 
     @Test
-    fun reportTimeLogNeverIncludesAccountData() = runTest {
-        val (_, line) = statusLog(""","dateTime":"2026-11-03T14:05:00Z"""")
-        assertFalse(line.contains("me@example.com"))
-        assertFalse(line.contains("tok-1"))
-        assertFalse(line.contains(vin))
+    fun statusReadWritesNothingToTheActivityLog() = runTest {
+        val log = mutableListOf<String>()
+        val (c, _) = client(statusJson = statusWith(""","dateTime":"2026-11-03T14:05:00Z""""), diag = { log += it })
+        c.signIn()
+        c.status(regId, forceRefresh = false)
+        assertTrue(log.toString(), log.isEmpty())
     }
 
     @Test
@@ -418,5 +411,48 @@ class UsBlueLinkClientTest {
         val (c2, _) = client(statusJson = statusWith(""))
         c2.signIn()
         assertNull(c2.status(regId, forceRefresh = false).reportedAtEpochMs)
+    }
+
+    // ---- Range ----
+
+    private suspend fun rangeOf(extra: String): Int? {
+        val (c, _) = client(statusJson = """{"vehicleStatus":{"doorLock":true,"engine":false$extra}}""")
+        c.signIn()
+        return c.status(regId, forceRefresh = false).rangeMiles
+    }
+
+    private fun evRange(value: String, unit: Int?): String {
+        val unitField = if (unit == null) "" else ""","unit":$unit"""
+        return ""","evStatus":{"batteryStatus":80,"drvDistance":[{"rangeByFuel":""" +
+            """{"totalAvailableRange":{"value":$value$unitField}}}]}"""
+    }
+
+    @Test
+    fun evRangeInMilesIsUsedAsIs() = runTest {
+        assertEquals(241, rangeOf(evRange("241", unit = 3)))
+        assertEquals(241, rangeOf(evRange("241.0", unit = 2)))
+    }
+
+    @Test
+    fun evRangeInKmIsConvertedToMiles() = runTest {
+        assertEquals(198, rangeOf(evRange("318", unit = 1)))
+    }
+
+    @Test
+    fun evRangeWithoutUnitIsTakenAsMiles() = runTest {
+        assertEquals(150, rangeOf(evRange("150", unit = null)))
+    }
+
+    @Test
+    fun missingRangeIsNull() = runTest {
+        assertNull(rangeOf(""))
+        assertNull(rangeOf(""","evStatus":{"batteryStatus":80}"""))
+        assertNull(rangeOf(""","evStatus":{"drvDistance":[]}"""))
+    }
+
+    @Test
+    fun dteIsUsedWhenThereIsNoEvRange() = runTest {
+        assertEquals(320, rangeOf(""","dte":{"value":320,"unit":3}"""))
+        assertEquals(62, rangeOf(""","dte":{"value":100,"unit":1}"""))
     }
 }

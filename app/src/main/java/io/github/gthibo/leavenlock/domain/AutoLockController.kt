@@ -328,9 +328,18 @@ class AutoLockController @Inject constructor(
             attempt++
             when (val result = client.lock(settings.vehicleId!!)) {
                 is CommandResult.Success -> {
-                    log.add(
-                        LogLevel.INFO,
-                        "Lock command returned success; physical lock state is not yet confirmed."
+                    log.add(LogLevel.INFO, "Hyundai reported the lock command done.")
+                    // Show it on the Home card, widget and notification now, like a manual lock.
+                    // Hyundai's cached status lags by minutes; the cache keeps older reads from
+                    // flipping it back (CachedStatus.after).
+                    val locked = status.copy(
+                        lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.LOCKED,
+                        anyDoorOpen = false,
+                    )
+                    statusCache.saveStatus(
+                        locked,
+                        StatusSummary.build(locked, settings.notificationFields, summaryLabels),
+                        fromCommand = true,
                     )
 
                     if (!settings.verifyLock) {
@@ -348,8 +357,11 @@ class AutoLockController @Inject constructor(
                     val confirmed = verifyLocked(settings, client, status)
 
                     if (!confirmed) {
-                        fail(
-                            "Lock command returned success, but locked state could not be confirmed. No extra command sent."
+                        // Hyundai said the command finished, so this is "sent, not verified", not an error.
+                        _state.value = _state.value.copy(detection = DetectionState.SENT_UNVERIFIED, graceRemaining = 0)
+                        log.add(
+                            LogLevel.WARN,
+                            "Hyundai's status hasn't confirmed the lock yet. No extra command sent."
                         )
                         maybePostDeparture(settings, status, locked = false, notConfirmed = true)
                         return
@@ -385,8 +397,8 @@ class AutoLockController @Inject constructor(
         }
     }
 
-    /** Reflects the locked state in UI + notification summary + widget cache. */
-    private suspend fun onLocked(
+    /** Reflects the confirmed lock in the UI state + notification summary (the cache already has it). */
+    private fun onLocked(
         settings: io.github.gthibo.leavenlock.data.settings.AppSettings,
         status: io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus,
     ) {
@@ -402,11 +414,28 @@ class AutoLockController @Inject constructor(
             lastLockAtEpochMs = clock(),
             statusSummary = summary,
         )
-        statusCache.saveStatus(locked, StatusSummary.build(locked, settings.notificationFields, summaryLabels))
     }
 
-    /** Read cached status once; never send another command from verification. */
+    /**
+     * Read cached status up to [VERIFY_ATTEMPTS] times, [VERIFY_PAUSE_MS] apart, because Hyundai's
+     * snapshot often lags the command. Never sends another command.
+     */
     private suspend fun verifyLocked(
+        settings: io.github.gthibo.leavenlock.data.settings.AppSettings,
+        client: io.github.gthibo.leavenlock.data.bluelink.BlueLinkClient,
+        status: io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus,
+    ): Boolean {
+        for (attempt in 1..VERIFY_ATTEMPTS) {
+            if (attempt > 1) {
+                log.add(LogLevel.INFO, "Checking the lock again in ${VERIFY_PAUSE_MS / 1000}s (try $attempt/$VERIFY_ATTEMPTS)…")
+                delay(VERIFY_PAUSE_MS)
+            }
+            if (verifyLockedOnce(settings, client, status)) return true
+        }
+        return false
+    }
+
+    private suspend fun verifyLockedOnce(
         settings: io.github.gthibo.leavenlock.data.settings.AppSettings,
         client: io.github.gthibo.leavenlock.data.bluelink.BlueLinkClient,
         status: io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus,
@@ -533,6 +562,8 @@ class AutoLockController @Inject constructor(
         const val GEO_POLL_MS = 3_000L
         const val STATUS_READ_ATTEMPTS = 3
         const val STATUS_READ_TIMEOUT_MS = 15_000L
+        const val VERIFY_ATTEMPTS = 3
+        const val VERIFY_PAUSE_MS = 20_000L
         const val NOTICE_NO_STATUS = "Couldn't reach Hyundai to check the car"
         const val NOTICE_SIGNED_OUT = "Signed out of BlueLink — sign in again"
         const val NOTICE_ERROR = "LEAVE/LOCK hit an error — check that your car is locked"

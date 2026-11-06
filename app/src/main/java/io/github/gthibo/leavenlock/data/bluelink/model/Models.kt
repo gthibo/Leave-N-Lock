@@ -20,7 +20,8 @@ data class VehicleStatus(
     val timestamp: Long,
     // Optional richer info for the status card; null when the backend doesn't provide it.
     val evBatteryPercent: Int? = null,
-    val rangeKm: Int? = null,
+    /** Remaining driving range in miles (US app: always miles). Null when not reported. */
+    val rangeMiles: Int? = null,
     val climateOn: Boolean? = null,
     val twelveVoltPercent: Int? = null,
     val anyDoorOpen: Boolean? = null,
@@ -47,7 +48,7 @@ fun VehicleStatus.mergedOnto(old: VehicleStatus?): VehicleStatus {
     if (old == null) return this
     return copy(
         evBatteryPercent = evBatteryPercent ?: old.evBatteryPercent,
-        rangeKm = rangeKm ?: old.rangeKm,
+        rangeMiles = rangeMiles ?: old.rangeMiles,
         twelveVoltPercent = twelveVoltPercent ?: old.twelveVoltPercent,
         climateOn = climateOn ?: old.climateOn,
         anyDoorOpen = anyDoorOpen ?: old.anyDoorOpen,
@@ -55,6 +56,11 @@ fun VehicleStatus.mergedOnto(old: VehicleStatus?): VehicleStatus {
         batteryCharging = batteryCharging ?: old.batteryCharging,
     )
 }
+
+/** Kilometres → whole miles (rounded). */
+fun kmToMiles(km: Double): Int = Math.round(km / KM_PER_MILE).toInt()
+
+const val KM_PER_MILE = 1.609344
 
 /** Result of a remote command (lock/unlock). */
 sealed interface CommandResult {
