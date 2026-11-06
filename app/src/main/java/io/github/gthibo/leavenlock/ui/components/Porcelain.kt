@@ -757,59 +757,63 @@ fun BrandLockup(modifier: Modifier = Modifier, markHeight: Dp = 22.dp, style: Te
     }
 }
 
-private val markHiPath by lazy { PathParser().parsePathString("M133.415 212.887V442.891L373.68 212.887Z").toPath() }
-private val markLoPath by lazy { PathParser().parsePathString("M375.34 443.943V213.939L135.075 443.943Z").toPath() }
-private val shackleRightPath by lazy { PathParser().parsePathString("M254.5 78h50l41 41v52.5h-33V135l-24-24h-34Z").toPath() }
-private val shackleLeftPath by lazy { PathParser().parsePathString("M254.5 78h-50l-41 41v85.5h33V135l24-24h34Z").toPath() }
+private val markHiPath by lazy { PathParser().parsePathString("M119.415 212.887V442.891L359.68 212.887Z").toPath() }
+private val markLoPath by lazy { PathParser().parsePathString("M361.34 443.943V213.939L121.075 443.943Z").toPath() }
+private val shackleRightPath by lazy { PathParser().parsePathString("M240.5 78h50l41 41v85.5h-33V135l-24-24h-34Z").toPath() }
+private val shackleLeftPath by lazy { PathParser().parsePathString("M240.5 78h-50l-41 41v85.5h33V135l24-24h34Z").toPath() }
 private val runePath by lazy {
     PathParser().parsePathString(
-        "M789 1064V0l1281 1012-702 643 702 661L778 3334l12-1123-544 532L0 2509l789-737v-263L5 778l246-251 538 538zm344-352l363 305-363 292V712zm0 1304l363 305-363 292v-597z",
+        "M220.015 295.517v-61.045l73.495 58.061-40.276 36.891 40.276 37.924-74.126 58.406.688-64.43-31.211 30.522-14.114-13.425 45.267-42.284v-15.089l-44.98-41.94 14.114-14.401 30.867 30.867v-.057ZM239.751 275.321l20.826 17.499-20.826 16.753v-34.252ZM239.751 350.136l20.826 17.499-20.826 16.753v-34.252Z",
     ).toPath().apply { fillType = PathFillType.EvenOdd }
 }
 
-/** Dissolve cells (x, y, shade): 0 = mark-lo, 1 = line-strong, 2 = line, 3 = signal. */
-private val dissolve = listOf(
-    Triple(312.5f, 171.5f, 0), Triple(320.75f, 171.5f, 0), Triple(329.0f, 171.5f, 0), Triple(337.25f, 171.5f, 0),
-    Triple(312.5f, 179.75f, 0), Triple(320.75f, 179.75f, 1), Triple(329.0f, 179.75f, 0), Triple(337.25f, 179.75f, 1),
-    Triple(312.5f, 188.0f, 1), Triple(329.0f, 188.0f, 1), Triple(337.25f, 188.0f, 3),
-    Triple(312.5f, 196.25f, 2), Triple(329.0f, 196.25f, 2),
+private enum class MarkPx { Lit, Mid, Dim, Off, Signal }
+
+/** The notched 3×4 pixel grid on the shackle's right leg (x, y, shade); the top-middle cell is empty. */
+private val markGrid = listOf(
+    Triple(298.434f, 160.362f, MarkPx.Lit), Triple(320.509f, 160.362f, MarkPx.Lit),
+    Triple(298.434f, 171.399f, MarkPx.Mid), Triple(309.472f, 171.399f, MarkPx.Lit), Triple(320.509f, 171.412f, MarkPx.Mid),
+    Triple(298.434f, 182.437f, MarkPx.Lit), Triple(309.472f, 182.437f, MarkPx.Mid), Triple(320.488f, 182.428f, MarkPx.Lit),
+    Triple(298.498f, 193.465f, MarkPx.Off), Triple(309.493f, 193.465f, MarkPx.Dim), Triple(320.509f, 193.459f, MarkPx.Signal),
 )
+private const val MARK_CELL = 11.022f
 
 /**
- * The compact LEAVE/LOCK mark (lock + pixel dissolve, no arcs), drawn from the design's
- * `mark-compact-on-*` artwork with theme tokens, so it is gunmetal on Porcelain and satin
- * silver on Graphite. [light] is for teal-deep and graphite grounds. Size it by height.
+ * The compact LEAVE/LOCK mark (lock + pixel grid, no arcs), drawn from the design's
+ * `mark-compact-on-*` artwork (viewBox 114 74 252 374) with theme tokens, so it is gunmetal on
+ * Porcelain and satin silver on Graphite. [light] is for teal-deep and graphite grounds, with the
+ * same mapping as the design page's `tone="light"`. Size it by height.
  */
 @Composable
 fun PorcelainMark(modifier: Modifier = Modifier, light: Boolean = LocalOnHero.current) {
     val c = Porcelain.colors
     val hi = if (light) c.onTealDeep else c.markHi
     val lo = if (light) c.onTealDeepMuted else c.markLo
-    val mid = if (light) c.teal else c.lineStrong
-    val dim = if (light) c.tealDeepRaised else c.line
     val rune = if (light) c.tealDeep else c.markRune
+    val seam = if (light) c.onTealDeep else c.markSeam
+    fun px(shade: MarkPx): Color = when (shade) {
+        MarkPx.Lit -> if (light) c.onTealDeepMuted else c.markPxLit
+        MarkPx.Mid -> if (light) c.teal else c.markPxMid
+        MarkPx.Dim -> if (light) c.teal else c.markPxDim
+        MarkPx.Off -> if (light) c.tealDeepRaised else c.markPxOff
+        MarkPx.Signal -> c.signal
+    }
     BoxWithConstraints(modifier) {
         val h = maxHeight.takeIf { it != Dp.Infinity } ?: 22.dp
         Canvas(Modifier.size(h * (252f / 374f), h)) {
             val s = size.height / 374f
             withTransform({
                 scale(s, s, pivot = Offset.Zero)
-                translate(-128f, -74f)
+                translate(-114f, -74f)
             }) {
+                // The seam sits under the facets and shows only in the gap between them.
+                drawLine(seam, Offset(360.038f, 214.189f), Offset(120.774f, 442.925f), strokeWidth = 2.4f, cap = StrokeCap.Round)
                 drawPath(markHiPath, hi)
                 drawPath(markLoPath, lo)
                 drawPath(shackleRightPath, lo)
                 drawPath(shackleLeftPath, hi)
-                dissolve.forEach { (x, y, shade) ->
-                    val col = when (shade) { 0 -> lo; 1 -> mid; 2 -> dim; else -> c.signal }
-                    drawRect(col, Offset(x, y), Size(8.25f, 8.25f))
-                }
-                withTransform({
-                    translate(188.75f, 234.47f)
-                    scale(0.05737f, 0.05737f, pivot = Offset.Zero)
-                }) {
-                    drawPath(runePath, rune)
-                }
+                markGrid.forEach { (x, y, shade) -> drawRect(px(shade), Offset(x, y), Size(MARK_CELL, MARK_CELL)) }
+                drawPath(runePath, rune)
             }
         }
     }

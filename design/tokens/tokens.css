@@ -6,9 +6,9 @@
   --silver: #c9ced0; /* Cool silver as a material: large blocks, inactive pixels, illustration planes. Never text. */
   --silver-soft: #dee2e3; /* Quiet fills behind neutral labels and selected table rows. */
   --line: #cfd4d5; /* Hairline dividers and panel edges at stroke-hairline. Decorative only; it does not need 3:1. */
-  --line-strong: #80888c; /* Borders of controls that carry meaning (inputs, secondary buttons, switch tracks): 3:1 or more on surface and surface-raised in both themes. */
-  --ink: #23272a; /* Primary text and icons on surface, surface-raised, surface-sunken and teal-soft. 12:1 or more in both themes. */
-  --ink-muted: #565e62; /* Secondary text, captions, units and mono labels on any surface or teal-soft. 5.3:1 or more in both themes. */
+  --line-strong: #7a8286; /* Borders of controls that carry meaning (inputs, secondary buttons, switch tracks): 3:1 or more on surface and surface-raised in both themes (3.2:1 on the light page, 3.3:1 on dark cards). */
+  --ink: #23272a; /* Primary text and icons on surface, surface-raised, surface-sunken and teal-soft. 12:1 or more on surface and surface-raised, and 10.9:1 or more on the others, in both themes. */
+  --ink-muted: #565e62; /* Secondary text, captions, units and mono labels on any surface or teal-soft. 4.8:1 or more in both themes (lowest on light surface-sunken). */
   --graphite: #2e3337; /* The deep neutral material: instrument panels, the cover slab, stat tiles inside dark cards. Carries on-graphite text, mint and signal pixels. */
   --on-graphite: #f3f4f1; /* Text and icons on a graphite fill. 11:1 in both themes. */
   --teal: #2e6e74; /* The one accent: primary action, active state, focus ring, links and the filled part of meters. As text, on surface, surface-raised and teal-soft (4.6:1 or more). */
@@ -19,7 +19,7 @@
   --teal-deep-raised: #2a6267; /* Stat tiles and icon wells inside a teal-deep card; on-teal-deep text on it. */
   --on-teal-deep: #eef4f3; /* Titles, values and icons on teal-deep (7.8:1 or more). */
   --on-teal-deep-muted: #a9cbc7; /* Mono eyebrows and secondary lines on teal-deep (5:1 or more). */
-  --mint: #b9e8dc; /* Ice-mint accent, used small: a single lit pixel, the leading meter segment, the live dot inside a Label. Only on graphite, teal, teal-deep or under on-mint text. Never text on surface (1.2:1). */
+  --mint: #b9e8dc; /* Ice-mint accent, used small: a single lit pixel, the leading meter segment, the live dot inside a Label. Only on graphite, teal, teal-deep or under on-mint text. Never text on surface (1.1:1). */
   --on-mint: #23272a; /* Text on a mint fill. */
   --signal: #e39a2d; /* Amber lamp pixels, after a parametric tail-lamp: an unlocked car, a pending lock, a confirmation waiting. Lit pixels only, on graphite or teal-deep; never text, never a glow. */
   --focus: var(--teal); /* Keyboard focus ring: 2px solid, offset 2px. An alias of teal, so it follows the accent in every theme. */
@@ -29,8 +29,13 @@
   --on-danger: #ffffff; /* Label on a danger fill (Unlock now). */
   --tonal: #d3d8d9; /* A fill, not text: tonal buttons (Reload vehicles) and stat tiles. Their labels are ink, which reads 10.5:1 on tonal in light and 8.3:1 in dark. In dark it is lifted to #3a4348 so a tonal button separates from surface-raised. */
   --mark-hi: #5b686e; /* The lit facet of the LEAVE/LOCK mark: gunmetal on Porcelain, satin silver on Graphite. Mark only. */
-  --mark-lo: #2e3337; /* The shaded facet, signal arcs and dissolving pixels of the mark. Mark only. */
-  --mark-rune: #f3f4f1; /* The Bluetooth rune cut into the mark's body. Mark only. */
+  --mark-lo: #2e3337; /* The shaded facet and signal arcs of the mark. Mark only. */
+  --mark-rune: #f3f4f1; /* The Bluetooth rune cut into the mark's body. Fixed artwork colour: it no longer matches surface exactly, which reads as a faint cut. Mark only. */
+  --mark-px-lit: #2e3337; /* Lit cells of the mark's pixel grid (six of the eleven). Mark only. */
+  --mark-px-mid: #80888c; /* Grey cells of the mark's pixel grid (three). Fixed, so border tweaks never repaint the logo. Mark only. */
+  --mark-px-dim: #bcc5c7; /* The bottom-middle cell of the mark's pixel grid, between off and lit. Mark only. */
+  --mark-px-off: #d3d8d9; /* The bottom-left cell of the mark's pixel grid, nearly the ground colour so it reads as an unlit lamp. Mark only. */
+  --mark-seam: #f3f4f1; /* The fine 2.4-unit line in the gap between the mark's two body facets. Mark only. */
   --shadow-float: 0 1px 0 rgba(35,39,42,0.06), 0 12px 32px rgba(35,39,42,0.08); /* Menus, popovers and toasts. Never on panels or cards. */
 }
 [data-theme="dark"] {
@@ -40,7 +45,7 @@
   --silver: #6b7377;
   --silver-soft: #2a3034;
   --line: #353c41;
-  --line-strong: #687075;
+  --line-strong: #70787c;
   --ink: #e6e9e8;
   --ink-muted: #a1a9ac;
   --graphite: #262b2f;
@@ -65,6 +70,11 @@
   --mark-hi: #d7e4e3;
   --mark-lo: #8fa7ab;
   --mark-rune: #1c2023;
+  --mark-px-lit: #748e95;
+  --mark-px-mid: #687075;
+  --mark-px-dim: #3e5056;
+  --mark-px-off: #2c3236;
+  --mark-seam: #e6e8e5;
   --shadow-float: 0 1px 0 rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.45);
 }
 :root {

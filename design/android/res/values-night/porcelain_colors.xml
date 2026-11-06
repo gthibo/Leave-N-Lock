@@ -7,7 +7,7 @@
     <color name="pg_silver">#6B7377</color>
     <color name="pg_silver_soft">#2A3034</color>
     <color name="pg_line">#353C41</color>
-    <color name="pg_line_strong">#687075</color>
+    <color name="pg_line_strong">#70787C</color>
     <color name="pg_ink">#E6E9E8</color>
     <color name="pg_ink_muted">#A1A9AC</color>
     <color name="pg_graphite">#262B2F</color>
@@ -32,4 +32,9 @@
     <color name="pg_mark_hi">#D7E4E3</color>
     <color name="pg_mark_lo">#8FA7AB</color>
     <color name="pg_mark_rune">#1C2023</color>
+    <color name="pg_mark_px_lit">#748E95</color>
+    <color name="pg_mark_px_mid">#687075</color>
+    <color name="pg_mark_px_dim">#3E5056</color>
+    <color name="pg_mark_px_off">#2C3236</color>
+    <color name="pg_mark_seam">#E6E8E5</color>
 </resources>

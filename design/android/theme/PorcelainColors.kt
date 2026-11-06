@@ -45,6 +45,11 @@ data class PorcelainColors(
     val markHi: Color,
     val markLo: Color,
     val markRune: Color,
+    val markPxLit: Color,
+    val markPxMid: Color,
+    val markPxDim: Color,
+    val markPxOff: Color,
+    val markSeam: Color,
 )
 
 /** Porcelain (light) theme. */
@@ -55,7 +60,7 @@ val PorcelainLight = PorcelainColors(
     silver = Color(0xFFC9CED0),
     silverSoft = Color(0xFFDEE2E3),
     line = Color(0xFFCFD4D5),
-    lineStrong = Color(0xFF80888C),
+    lineStrong = Color(0xFF7A8286),
     ink = Color(0xFF23272A),
     inkMuted = Color(0xFF565E62),
     graphite = Color(0xFF2E3337),
@@ -80,6 +85,11 @@ val PorcelainLight = PorcelainColors(
     markHi = Color(0xFF5B686E),
     markLo = Color(0xFF2E3337),
     markRune = Color(0xFFF3F4F1),
+    markPxLit = Color(0xFF2E3337),
+    markPxMid = Color(0xFF80888C),
+    markPxDim = Color(0xFFBCC5C7),
+    markPxOff = Color(0xFFD3D8D9),
+    markSeam = Color(0xFFF3F4F1),
 )
 
 /** Graphite (dark) theme. */
@@ -90,7 +100,7 @@ val PorcelainDark = PorcelainColors(
     silver = Color(0xFF6B7377),
     silverSoft = Color(0xFF2A3034),
     line = Color(0xFF353C41),
-    lineStrong = Color(0xFF687075),
+    lineStrong = Color(0xFF70787C),
     ink = Color(0xFFE6E9E8),
     inkMuted = Color(0xFFA1A9AC),
     graphite = Color(0xFF262B2F),
@@ -115,6 +125,11 @@ val PorcelainDark = PorcelainColors(
     markHi = Color(0xFFD7E4E3),
     markLo = Color(0xFF8FA7AB),
     markRune = Color(0xFF1C2023),
+    markPxLit = Color(0xFF748E95),
+    markPxMid = Color(0xFF687075),
+    markPxDim = Color(0xFF3E5056),
+    markPxOff = Color(0xFF2C3236),
+    markSeam = Color(0xFFE6E8E5),
 )
 
 val LocalPorcelainColors = staticCompositionLocalOf { PorcelainLight }

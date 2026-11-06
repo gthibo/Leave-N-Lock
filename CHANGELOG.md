@@ -8,6 +8,13 @@
   Home, with your BlueLink PIN if you set one, and Dry run still sends nothing. Unlocked or
   unknown keeps one-tap "Lock now". While an auto-lock is running the button reads
   "Auto-lock running…" and opens the app, where Cancel is.
+- **Refreshed app icon.** The lock's pixel cluster is now a bolder notched grid, and a thin
+  light seam runs along the body's diagonal. The launcher icon, themed (one-colour) icon, logo
+  marks and favicon all match, and so does the logo inside the app (welcome screen and top bar).
+- **Slightly darker control borders.** Text boxes, switches, radio buttons and outline buttons
+  get a touch more contrast so their edges stay easy to see on the new backgrounds.
+- **The home-screen widget gets the cut corner.** Like the cards in the app, the widget now has
+  its top-right corner cut off and square corners elsewhere, instead of rounded corners.
 - **Removed the "Minimum refresh interval" slider.** It never did anything: LEAVE/LOCK
   doesn't poll the car on a timer, and it wakes the car only once, at the end of an auto-lock
   check. Older backups still restore.

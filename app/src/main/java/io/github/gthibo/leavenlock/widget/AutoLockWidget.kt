@@ -55,7 +55,7 @@ class AutoLockWidget : AppWidgetProvider() {
                 setTextViewText(R.id.widget_lock_state, label)
                 setTextViewText(R.id.widget_summary, cached.summary)
 
-                setOnClickPendingIntent(R.id.widget_root, openAppIntent(context))
+                setOnClickPendingIntent(android.R.id.background, openAppIntent(context))
                 bindButton(context, action)
             }
             manager.updateAppWidget(id, views)

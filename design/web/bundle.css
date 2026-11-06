@@ -151,15 +151,20 @@ body { margin: 0; font-family: var(--font-body); font-size: 15px; line-height: 2
 .pg-mark-svg { display: block; flex: none; }
 .pg-mark-svg .mk-hi { fill: var(--mark-hi); }
 .pg-mark-svg .mk-lo { fill: var(--mark-lo); }
-.pg-mark-svg .mk-mid { fill: var(--line-strong); }
-.pg-mark-svg .mk-dim { fill: var(--line); }
+.pg-mark-svg .mk-px-lit { fill: var(--mark-px-lit); }
+.pg-mark-svg .mk-px-mid { fill: var(--mark-px-mid); }
+.pg-mark-svg .mk-px-dim { fill: var(--mark-px-dim); }
+.pg-mark-svg .mk-px-off { fill: var(--mark-px-off); }
+.pg-mark-svg .mk-seam { stroke: var(--mark-seam); }
 .pg-mark-svg .mk-sig { fill: var(--signal); }
 .pg-mark-svg .mk-rune { fill: var(--mark-rune); }
 .pg-mark-svg .mk-arcs { fill: none; stroke: var(--mark-hi); stroke-miterlimit: 10; }
 .pg-mark-light .mk-hi { fill: var(--on-teal-deep); }
 .pg-mark-light .mk-lo { fill: var(--on-teal-deep-muted); }
-.pg-mark-light .mk-mid { fill: var(--teal); }
-.pg-mark-light .mk-dim { fill: var(--teal-deep-raised); }
+.pg-mark-light .mk-px-lit { fill: var(--on-teal-deep-muted); }
+.pg-mark-light .mk-px-mid, .pg-mark-light .mk-px-dim { fill: var(--teal); }
+.pg-mark-light .mk-px-off { fill: var(--teal-deep-raised); }
+.pg-mark-light .mk-seam { stroke: var(--on-teal-deep); }
 .pg-mark-light .mk-arcs { stroke: var(--on-teal-deep); }
 .pg-mark-light .mk-rune { fill: var(--teal-deep); }
 .pg-mark-on-deep { color: var(--on-teal-deep); }
