@@ -7,6 +7,9 @@ import io.github.gthibo.leavenlock.data.bluelink.model.Vehicle
 import io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus
 import io.github.gthibo.leavenlock.data.bluelink.model.kmToMiles
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.pluginOrNull
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -45,6 +48,8 @@ class UsBlueLinkClient(
         const val POLL_INTERVAL_MS = 3_000L
         /** Hyundai distance unit code for kilometres (2 and 3 are miles). */
         const val UNIT_KM = 1
+        /** A live read waits for the car to wake and answer; the app-wide 30 s is too short. */
+        const val LIVE_STATUS_TIMEOUT_MS = 90_000L
     }
 
     private val mutex = Mutex()
@@ -64,6 +69,7 @@ class UsBlueLinkClient(
     private fun headers(
         request: io.ktor.client.request.HttpRequestBuilder,
         authenticated: Boolean = true,
+        live: Boolean = false,
     ) {
         request.header("Accept", "application/json")
         request.header("User-Agent", "Mozilla/5.0")
@@ -78,7 +84,8 @@ class UsBlueLinkClient(
                 System.currentTimeMillis()
             ) / 3_600_000).toString()
         )
-        request.header("refresh", "false")
+        // "true" makes Hyundai wake the car for a live reading (slow, uses the 12V battery).
+        request.header("refresh", live.toString())
         request.header("encryptFlag", "false")
         request.header("brandIndicator", "H")
         request.header(
@@ -239,11 +246,18 @@ class UsBlueLinkClient(
         val vehicle = vehicleHeaders[vehicleId]
             ?: error("Selected vehicle not found on US account")
 
-        // Always cached in this first test, even when refresh is requested.
+        // forceRefresh asks the car itself (refresh: true), as hyundai_kia_connect_api and bluelinky
+        // do; otherwise Hyundai's cached snapshot. Live reads wait on the car, so they get longer.
         val response = http.get(
             "$base/ac/v2/rcs/rvs/vehicleStatus"
         ) {
-            headers(this)
+            headers(this, live = forceRefresh)
+            if (forceRefresh && http.pluginOrNull(HttpTimeout) != null) {
+                timeout {
+                    requestTimeoutMillis = LIVE_STATUS_TIMEOUT_MS
+                    socketTimeoutMillis = LIVE_STATUS_TIMEOUT_MS
+                }
+            }
             header("registrationId", vehicleId)
             header("gen", vehicle.generation)
             header("vin", vehicle.vin)

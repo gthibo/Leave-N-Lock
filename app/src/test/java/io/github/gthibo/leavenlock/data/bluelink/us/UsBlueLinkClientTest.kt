@@ -455,4 +455,28 @@ class UsBlueLinkClientTest {
         assertEquals(320, rangeOf(""","dte":{"value":320,"unit":3}"""))
         assertEquals(62, rangeOf(""","dte":{"value":100,"unit":1}"""))
     }
+
+    // ---- Live status (refresh header) ----
+
+    private val liveStatusJson =
+        """{"vehicleStatus":{"doorLock":true,"engine":false,"dateTime":"2026-11-03T14:05:00Z"}}"""
+
+    @Test
+    fun cachedStatusSendsRefreshFalse() = runTest {
+        val (c, fake) = client(statusJson = liveStatusJson)
+        c.signIn()
+        c.status(regId, forceRefresh = false)
+        val read = fake.requests.single { it.url.encodedPath.endsWith("/ac/v2/rcs/rvs/vehicleStatus") }
+        assertEquals(listOf("false"), read.headers.getAll("refresh"))
+    }
+
+    @Test
+    fun forcedStatusAsksTheCarLiveWithRefreshTrue() = runTest {
+        val (c, fake) = client(statusJson = liveStatusJson)
+        c.signIn()
+        val status = c.status(regId, forceRefresh = true)
+        val read = fake.requests.single { it.url.encodedPath.endsWith("/ac/v2/rcs/rvs/vehicleStatus") }
+        assertEquals(listOf("true"), read.headers.getAll("refresh"))
+        assertEquals(java.time.Instant.parse("2026-11-03T14:05:00Z").toEpochMilli(), status.timestamp)
+    }
 }

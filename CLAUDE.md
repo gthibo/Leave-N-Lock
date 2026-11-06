@@ -70,7 +70,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
    give-up is never silent. When Hyundai reports the lock command done, the controller saves the
    LOCKED status to `StatusCache` as a command right away (the Home card updates like a manual
    lock). Verify then reads cached status up to `VERIFY_ATTEMPTS` (3) times, `VERIFY_PAUSE_MS`
-   (20 s) apart; `LOCKED` only on a newer, fresh LOCKED read, otherwise `SENT_UNVERIFIED` (not
+   (20 s) apart; if none confirms, one live read (`status(forceRefresh = true)`) asks the car
+   itself. `LOCKED` only on a newer, fresh LOCKED read, otherwise `SENT_UNVERIFIED` (not
    `ERROR`). Verification never sends another command.
 
 ### 4b. US BlueLink client (`data/bluelink/us/UsBlueLinkClient`)
@@ -80,7 +81,11 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
   `UsCredentialStore` → `SecureStore` because refreshing needs the password; cleared on sign-out
   or a failed sign-in. Access token lives in memory only. `UsCredentials.toString()` is redacted.
 - **Vehicles:** `GET /ac/v2/enrollment/details/{username}` (generation, VIN, registration id).
-- **Status:** cached vehicle status (`refresh: false`). `dateTime` → `timestamp` +
+- **Status:** `GET /ac/v2/rcs/rvs/vehicleStatus`. `forceRefresh = false` → header `refresh: false`
+  (Hyundai's cached snapshot); `forceRefresh = true` → `refresh: true` (wakes the car for a live
+  reading; 90 s timeout instead of the app-wide 30 s, when `HttpTimeout` is installed). Live reads
+  drain the 12V battery and count toward Hyundai's limits, so only the auto-lock verify step uses
+  them; Home, the widget worker and the pre-lock read stay cached. `dateTime` → `timestamp` +
   `reportedAtEpochMs`; `LockPolicy` skips if the report is missing, in the future or > 5 min old.
 - **Range:** `evStatus.drvDistance[0].rangeByFuel.totalAvailableRange`, else `dte`, each
   `{value, unit}`; unit 1 = km (converted), 2/3 = miles (`DISTANCE_UNITS` in
@@ -160,10 +165,10 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 
 ## 8. Open TODOs / known gaps
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
-- US `status(forceRefresh)` reads Hyundai's cached snapshot; if it hasn't updated within the
-  ~40 s verify window, the run ends "Lock sent, not verified" even though the car locked (the
-  card still shows Locked). A live refresh (`refresh: true`) is supported by the reference
-  library but not used yet.
+- The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
+  only; not yet seen against a real Ioniq 5 (reply shape, timing, `dateTime` freshness).
+- `AppSettings.minRefreshSeconds` and its Settings slider are not enforced anywhere (left from
+  i5-AutoLock); its description still talks about live polls.
 - Range: parsed from the US status reply but only verified against the reference libraries, not
   yet seen on a real Ioniq 5 reply. A missing/unknown unit code is assumed to be miles.
 - Optional speed-up: US refresh-token grant instead of a full sign-in every ~30 min.
@@ -201,3 +206,9 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   (merge, `CachedStatus`, `StatusSummary`, Home tile, fake client 198 mi). Cache key `range_km` →
   `range_mi` with a one-time km → mi read. `StatusCache.read`/`write` moved to its companion so
   tests round-trip them. New `kmToMiles` in `model/`.
+- 2026-11-05 — Live status for the lock check: `UsBlueLinkClient.status(forceRefresh = true)` now
+  sends `refresh: true` (live read from the car, 90 s timeout); `false` still reads the cache.
+  `AutoLockController.verifyLocked` adds one live read after the 3 cached tries fail, so a lock
+  that worked no longer ends "Lock sent, not verified" just because Hyundai's snapshot lagged.
+  Home's pull/refresh button now always asks for the cached read (it passed `force` before, which
+  the US client ignored), so it still never wakes the car. 5 new tests (178 total).

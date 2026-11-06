@@ -2113,4 +2113,68 @@ class AutoLockControllerTest {
             unmockkObject(AutoLockNotification)
         }
     }
+
+    // ---- Live status read as the last verify step ----
+
+    @Test
+    fun verifyAsksTheCarLiveOnceWhenCachedReadsNeverConfirm() = runTest {
+        val f = Fixture(backgroundScope)
+        val preLockTime = System.currentTimeMillis() - 10_000L
+        val liveTime = System.currentTimeMillis() - 1_000L
+        coEvery { f.client.status(any(), false) } returns f.unlocked(preLockTime)
+        coEvery { f.client.status(any(), true) } returns f.locked(liveTime)
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
+
+        coVerify(exactly = 1) { f.client.lock("test-vehicle") }
+        coVerify(exactly = 4) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 1) { f.client.status("test-vehicle", true) }
+        assertEquals(DetectionState.LOCKED, f.controller.state.value.detection)
+        assertNotNull(f.controller.state.value.lastLockAtEpochMs)
+        assertTrue(f.log.entries.value.any { it.message.contains("Asking the car directly") })
+    }
+
+    @Test
+    fun liveReadThatAlsoFailsEndsSentUnverifiedWithoutAnotherLock() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), false) } returns f.unlocked()
+        coEvery { f.client.status(any(), true) } throws IllegalStateException("live read timed out")
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+        advanceTimeBy(VERIFY_RETRIES_MS)
+        runCurrent()
+
+        coVerify(exactly = 1) { f.client.lock("test-vehicle") }
+        coVerify(exactly = 1) { f.client.status("test-vehicle", true) }
+        assertEquals(DetectionState.SENT_UNVERIFIED, f.controller.state.value.detection)
+        assertNull(f.controller.state.value.lastLockAtEpochMs)
+    }
+
+    @Test
+    fun noLiveReadWhenACachedReadConfirms() = runTest {
+        val f = Fixture(backgroundScope)
+        val preLockTime = System.currentTimeMillis() - 10_000L
+        val postLockTime = System.currentTimeMillis() - 1_000L
+        var reads = 0
+        coEvery { f.client.status(any(), any()) } coAnswers {
+            reads++
+            if (reads == 1) f.unlocked(preLockTime) else f.locked(postLockTime)
+        }
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(DetectionState.LOCKED, f.controller.state.value.detection)
+        coVerify(exactly = 0) { f.client.status(any(), true) }
+    }
 }

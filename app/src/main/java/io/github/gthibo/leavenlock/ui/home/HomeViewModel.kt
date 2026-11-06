@@ -221,8 +221,6 @@ class HomeViewModel @Inject constructor(
                 _notice.value = msg
                 return@launch
             }
-            // The minimum live-poll interval is enforced in the client (serves cached within it),
-            // so we don't block the refresh here — no redundant "please wait" guard.
         }
         val vehicleId = s.vehicleId ?: "demo-ioniq5"
         _vehicleStatus.update { it.copy(loading = true, error = null) }
@@ -231,7 +229,9 @@ class HomeViewModel @Inject constructor(
         // null result = session expired (needs re-auth).
         val result: Result<VehicleStatus>? = withContext(Dispatchers.IO) {
             if (!s.demoMode && !client.ensureFreshSession()) null
-            else runCatching { client.status(vehicleId, forceRefresh = force) }
+            // Always Hyundai's cached snapshot: forceRefresh = true wakes the car (12V drain, rate
+            // limit), so only the auto-lock verify step asks for a live read.
+            else runCatching { client.status(vehicleId, forceRefresh = false) }
         }
         if (result == null) {
             _vehicleStatus.update { it.copy(loading = false, error = "Session expired — please sign in again.", needsReauth = true) }

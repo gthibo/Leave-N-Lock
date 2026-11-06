@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **Fewer "Lock sent, not verified" results.** If Hyundai's saved status still hasn't caught
+  up after the three checks, LEAVE/LOCK asks the car once for a live status before giving up.
+  This wakes the car briefly, so it happens only at that last step, never on Home refreshes.
+  It still never sends a second lock.
 - **New look and name: LEAVE/LOCK.** The app now uses the Porcelain Grid design: calm
   porcelain (light) and graphite (dark) themes, flat cards with one cut corner, square
   "pixel lamp" meters, new fonts, a new app icon and a new notification icon. The old

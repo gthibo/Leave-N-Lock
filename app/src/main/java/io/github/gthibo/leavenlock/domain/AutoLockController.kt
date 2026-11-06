@@ -418,7 +418,8 @@ class AutoLockController @Inject constructor(
 
     /**
      * Read cached status up to [VERIFY_ATTEMPTS] times, [VERIFY_PAUSE_MS] apart, because Hyundai's
-     * snapshot often lags the command. Never sends another command.
+     * snapshot often lags the command. If none confirms, ask the car once for a live reading
+     * (wakes the car, so only as the last step). Never sends another command.
      */
     private suspend fun verifyLocked(
         settings: io.github.gthibo.leavenlock.data.settings.AppSettings,
@@ -432,18 +433,20 @@ class AutoLockController @Inject constructor(
             }
             if (verifyLockedOnce(settings, client, status)) return true
         }
-        return false
+        log.add(LogLevel.INFO, "Asking the car directly for a live status…")
+        return verifyLockedOnce(settings, client, status, live = true)
     }
 
     private suspend fun verifyLockedOnce(
         settings: io.github.gthibo.leavenlock.data.settings.AppSettings,
         client: io.github.gthibo.leavenlock.data.bluelink.BlueLinkClient,
         status: io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus,
+        live: Boolean = false,
     ): Boolean {
         val check = try {
             client.status(
                 settings.vehicleId ?: return false,
-                forceRefresh = false,
+                forceRefresh = live,
             )
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
