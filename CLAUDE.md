@@ -207,14 +207,8 @@ new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new
 wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
 **v0.2.0 is released** (tag on 19b63d9, PR #12): signed APK `leave-n-lock-0.2.0.apk` on the
 GitHub Release, cert SHA-256 `a4ffa305…6de218` (keystore + password kept by the maintainer,
-never in the repo). **Open, awaiting the maintainer's car test (not merged):** PR #13
-(`claude/target-sdk-36`, targetSdk 35 → 36) and PR #14 (`claude/target-sdk-37`, stacked on #13:
-targetSdk 37; start chime and lock sound moved to notification-channel sounds because Android 17
-mutes background audio from a foreground service without while-in-use rights). CI green on both;
-the phone has the #14 debug build. Car test: walk-away lock, reconnect cancel, widget
-Lock/Unlock…, start chime + lock sound (now need notifications allowed; follow notification
-volume/DND; brief self-dismissing notification), What's new. Merge #13 first, then #14 (GitHub
-retargets it to `main`). Then: a replacement plan for `androidx.security:security-crypto`
+never in the repo). Next, in order: targetSdk 36/37 on
+its own branch with a car test; a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
 New work goes on its own branch cut from `main`.
