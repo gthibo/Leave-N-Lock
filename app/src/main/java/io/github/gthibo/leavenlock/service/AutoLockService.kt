@@ -145,9 +145,10 @@ class AutoLockService : Service() {
             showLockNow = s.showLockNowAction
             showStatus = s.showStatusInNotification
             showNotificationIcon = s.showNotificationIcon
-            // Soft "listening" chime when an evaluation begins.
+            // Soft "listening" chime when an evaluation begins. Played as a notification sound:
+            // Android 17 mutes audio this background-started service would play itself.
             if (s.soundOnLock && intent.action != ACTION_ALREADY_RUNNING) {
-                runCatching { io.github.gthibo.leavenlock.data.sound.EvChime.playNotify() }
+                runCatching { SoundCues.playStart(this@AutoLockService) }
             }
         }
         startForegroundCompat(DetectionState.CONFIRMING, 0)
@@ -195,7 +196,7 @@ class AutoLockService : Service() {
         val settings = settingsRepo.settings.first()
         if (settings.hapticOnLock) vibrateOnce()
         if (settings.soundOnLock) runCatching {
-            io.github.gthibo.leavenlock.data.sound.LockSound.play(this@AutoLockService, settings.customLockSoundUri)
+            SoundCues.playLock(this@AutoLockService, settings.customLockSoundUri)
         }
     }
 
