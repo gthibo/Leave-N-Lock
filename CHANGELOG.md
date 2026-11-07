@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- **Built for Android 16.** LEAVE/LOCK now targets Android 16, so it follows that version's
+  newer rules. On Android 16 and later, the back gesture shows a preview of where you're going
+  (for example, a peek at the home screen) before you let go. Auto-lock, the widget and the
+  notifications should work the same as before.
+
 ## [0.2.0] - 2026-11-06
 
 - **"What's new" reads properly.** In Settings → About & changelog, each change now shows as

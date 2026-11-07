@@ -15,11 +15,16 @@ work. Everything else exists only to make that reliable, private, and effortless
 logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are out of scope.
 
 ## 2. Tech stack
-- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 35`. Toolchain: Gradle 9.8.2,
+- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 36`. Toolchain: Gradle 9.8.2,
   AGP 9.5.1, Kotlin 2.4.21, KSP 2.3.13, Hilt 2.60.1, Ktor 3.6.1, OkHttp 5.5.1.
-  `targetSdk` stays 35 on purpose: raising it opts into Android 16/17 runtime behaviour changes
-  (background, foreground-service and Bluetooth rules) that need their own branch and car test;
-  `compileSdk 37` is only what the androidx libraries require to build.
+  Android 16 target rules in force: edge-to-edge can't be opted out (we never did), predictive
+  back is on (`onBackPressed`/`KEYCODE_BACK` are not delivered: use Compose/`OnBackPressedDispatcher`
+  only), orientation/resize locks are ignored on sw ≥ 600dp (we set none). **`targetSdk 37` is
+  blocked by Android 17 background-audio hardening:** audio from the background needs a
+  foreground service with while-in-use rights, which `AutoLockService` lacks when started by the
+  Bluetooth/geofence receivers, boot or a sticky restart, so `EvChime`/`LockSound` would be
+  silently muted. Moving to 37 needs those sounds redesigned (e.g. via notification channels) and
+  a check that certificate transparency (default on at 37) passes for the Hyundai host.
 - UI: Jetpack Compose + Material 3, themed with the **Porcelain Grid** design system
   (`ui/theme/porcelain/`, see §6b). Dynamic colour is **off**; the user picks System default /
   Light / Dark. Fonts are bundled in `res/font/`. No XML layouts (except the widget).
@@ -207,8 +212,9 @@ new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new
 wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
 **v0.2.0 is released** (tag on 19b63d9, PR #12): signed APK `leave-n-lock-0.2.0.apk` on the
 GitHub Release, cert SHA-256 `a4ffa305…6de218` (keystore + password kept by the maintainer,
-never in the repo). Next, in order: targetSdk 36/37 on
-its own branch with a car test; a replacement plan for `androidx.security:security-crypto`
+never in the repo). **targetSdk 35 → 36 is on `claude/target-sdk-36` (PR open, awaiting the
+car test; no code changes were needed).** Next, in order: targetSdk 37 on its own branch (needs
+the background-audio redesign in §2); a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
 New work goes on its own branch cut from `main`.
@@ -310,3 +316,9 @@ New work goes on its own branch cut from `main`.
   config release" (misleading). Notes extraction in `release.yml` now matches the heading
   literally (gawk read the old dynamic regex as a character class). Release cert SHA-256:
   a4ffa3052cd2263af66148ce60ed74e2fb05a0c614e8dc969e435c4bf16de218.
+- 2026-11-06 — targetSdk 35 → 36 (`claude/target-sdk-36`; compileSdk stays 37). Reviewed the
+  Android 16 and 17 target-SDK changes against the code: 36 needs no code changes (edge-to-edge
+  already on, no `onBackPressed`/back-key handling, no orientation locks, no `scheduleAtFixedRate`,
+  no LAN, no body sensors). Manifest `tools:targetApi` → 36. 37 deferred: Android 17
+  background-audio hardening would mute the evaluation chime and lock sound when the service is
+  started from the background (see §2). 189 tests green, lint 0 errors.
