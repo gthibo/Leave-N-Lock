@@ -205,8 +205,9 @@ toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, PR 
 second car test (walk-away lock, reconnect-cancel log line, widget Unlock confirmation, What's
 new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new screen now joins
 wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
-0.2.0 is prepared on `release/0.2.0` (version bump + changelog roll); it is tagged once the
-release-signing secrets are set up. Then, in order: targetSdk 36/37 on
+**v0.2.0 is released** (tag on 19b63d9, PR #12): signed APK `leave-n-lock-0.2.0.apk` on the
+GitHub Release, cert SHA-256 `a4ffa305…6de218` (keystore + password kept by the maintainer,
+never in the repo). Next, in order: targetSdk 36/37 on
 its own branch with a car test; a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
@@ -304,4 +305,8 @@ New work goes on its own branch cut from `main`.
   versionCode 1 → 2. `## [Unreleased]` rolled into `## [0.2.0]`; start a new `## [Unreleased]`
   heading with the next user-facing change. Release title in `release.yml` renamed from the
   i5-AutoLock leftover "AutoLock" to "Leave-N-Lock". Release APKs are signed from the
-  `RELEASE_*` repo secrets (keystore kept off the repo by the maintainer).
+  `RELEASE_*` repo secrets (keystore kept off the repo by the maintainer). First release run
+  failed: a blank `RELEASE_KEY_PASSWORD` makes AGP report "Keystore file not set for signing
+  config release" (misleading). Notes extraction in `release.yml` now matches the heading
+  literally (gawk read the old dynamic regex as a character class). Release cert SHA-256:
+  a4ffa3052cd2263af66148ce60ed74e2fb05a0c614e8dc969e435c4bf16de218.
