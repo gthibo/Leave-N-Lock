@@ -23,7 +23,7 @@ brew install --cask android-commandlinetools
 # set env (add to ~/.zshrc)
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
-sdkmanager "platform-tools" "platforms;android-35" "system-images;android-34;google_apis;arm64-v8a" "emulator"
+sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0" "system-images;android-34;google_apis;arm64-v8a" "emulator"
 avdmanager create avd -n pixel_api34 -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7
 ```
 
@@ -32,7 +32,7 @@ avdmanager create avd -n pixel_api34 -k "system-images;android-34;google_apis;ar
 winget install --id EclipseAdoptium.Temurin.17.JDK
 winget install --id Google.AndroidStudio   # or install command-line tools manually
 # Then set ANDROID_HOME to %LOCALAPPDATA%\Android\Sdk and add platform-tools + emulator to PATH.
-sdkmanager "platform-tools" "platforms;android-35" "system-images;android-34;google_apis;x86_64" "emulator"
+sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0" "system-images;android-34;google_apis;x86_64" "emulator"
 avdmanager create avd -n pixel_api34 -k "system-images;android-34;google_apis;x86_64" -d pixel_7
 ```
 

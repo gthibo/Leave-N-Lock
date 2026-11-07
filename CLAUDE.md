@@ -15,14 +15,25 @@ work. Everything else exists only to make that reliable, private, and effortless
 logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are out of scope.
 
 ## 2. Tech stack
-- 100% Kotlin, JDK 17, `minSdk 26`, `target/compileSdk 35`.
+- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 35`. Toolchain: Gradle 9.8.2,
+  AGP 9.5.1, Kotlin 2.4.21, KSP 2.3.13, Hilt 2.60.1, Ktor 3.6.1, OkHttp 5.5.1.
+  `targetSdk` stays 35 on purpose: raising it opts into Android 16/17 runtime behaviour changes
+  (background, foreground-service and Bluetooth rules) that need their own branch and car test;
+  `compileSdk 37` is only what the androidx libraries require to build.
 - UI: Jetpack Compose + Material 3, themed with the **Porcelain Grid** design system
   (`ui/theme/porcelain/`, see §6b). Dynamic colour is **off**; the user picks System default /
   Light / Dark. Fonts are bundled in `res/font/`. No XML layouts (except the widget).
 - DI: Hilt. Async: Coroutines + Flow. HTTP: Ktor (OkHttp engine) + kotlinx.serialization.
 - Storage: DataStore (settings), EncryptedSharedPreferences/Keystore (PIN + US sign-in).
 - Background: Foreground Service (`connectedDevice`) + BroadcastReceivers. WorkManager via Hilt.
-- Build: Gradle version catalog (`gradle/libs.versions.toml`), KSP (never kapt).
+- Build: Gradle version catalog (`gradle/libs.versions.toml`), KSP (never kapt). AGP 9's
+  built-in Kotlin compiles the app: `app/build.gradle.kts` does **not** apply
+  `org.jetbrains.kotlin.android` (the root keeps it `apply false` only to pin KGP 2.4.21, which
+  must match the compose/serialization plugins). Compiler settings go in the top-level
+  `kotlin { compilerOptions { … } }` block (`kotlinOptions` is gone). Generated sources/assets
+  go through the Variant API (`androidComponents.onVariants { sources.… }`), not `sourceSets`
+  with a Provider: see `SyncChangelogAsset`, which bundles `CHANGELOG.md` as an asset.
+  `hiltViewModel` comes from `androidx.hilt.lifecycle.viewmodel.compose`.
 - App id / namespace / Kotlin package: `io.github.gthibo.leavenlock`. Strings: English only
   (`res/values/strings.xml`).
 
@@ -171,6 +182,8 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 
 ## 7. Build & test
 - `./gradlew testDebugUnitTest` · `./gradlew lint` · `./gradlew assembleDebug` · `./gradlew installDebug`
+- Needs SDK platform `android-37.0` and build-tools 36.0.0. A fresh worktree has no
+  `local.properties`, so set `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk` there.
 - On this Windows PC, Android Studio's bundled JDK (25) breaks Gradle: set
   `JAVA_HOME=C:\Users\mrthi\.jdks\jbr-21.0.11` first. If `app\build` gives AccessDenied, run
   `gradlew --stop`, delete `app\build`, then build again with `--no-daemon`.
@@ -178,7 +191,7 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 ## 7b. CI (`.github/workflows/`)
 - `ci.yml` — `guard` (required docs incl. this file with a Changelog, ≥ 40 lines; no committed
   secrets; secret-pattern scan + best-effort gitleaks) and `android` (wrapper validation, JDK 17,
-  SDK 35, unit tests, lint, assembleDebug).
+  platform 37.0 + build-tools 36.0.0, unit tests, lint, assembleDebug).
 - `release.yml` — on `v*` tags: builds the release APK, notes from `CHANGELOG.md`, publishes a
   GitHub Release (signed if the `RELEASE_*` secrets exist).
 
@@ -187,12 +200,14 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
 Unlock… button and the refreshed app icon. The GitHub Actions Dependabot bumps are merged.
 **Car test 2026-11-06 (Pixel 11 Pro, Ioniq 5, Armed): passed.** Three auto-locks, each confirmed
 on the first cached verify read about 70 s after walking away; the range in miles and the widget
-Unlock flow look right. One pre-lock status read timed out (15 s) and the retry worked. Next: the five
-Gradle Dependabot bumps (androidx, kotlin-ktor, okhttp 5, KSP 2.3, Hilt 2.60) fail because the
-toolchain is old (Gradle 8.11.1, AGP 8.7.3, Kotlin 2.1.0, compileSdk 35) and need one coordinated
-upgrade on their own branch, then a car re-test. Ideas not started yet, in priority order: US
-diagnostics export with redaction; Stats "Session expires" row; car-reported location. New work
-goes on its own branch cut from `main`.
+Unlock flow look right. One pre-lock status read timed out (15 s) and the retry worked. The
+toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, replacing Dependabot
+PRs #6–#10) is on `chore/gradle-upgrade`, green locally and on CI, awaiting a car re-test and the
+user's go-ahead to merge; then close #6–#10 as superseded. Ideas not started yet, in priority
+order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
+Follow-ups from the upgrade: `androidx.security:security-crypto` is deprecated upstream
+(`SecureStore` builds with deprecation warnings, needs a replacement plan); targetSdk 36/37 on
+its own branch. New work goes on its own branch cut from `main`.
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only. In the 2026-11-06 car test the cached reads always confirmed first, so it hasn't run
@@ -271,3 +286,12 @@ goes on its own branch cut from `main`.
   confirmation via `MainActivity.ACTION_CONFIRM_UNLOCK` (never a one-tap unlock); unlocked or
   unknown → one-tap "Lock now"; a running auto-lock → "Auto-lock running…" (opens the app).
   `AutoLockService` refreshes the widget on detection-state changes. 5 new tests.
+- 2026-11-06 — Toolchain upgrade in one change (replaces Dependabot #6–#10): Gradle 8.11.1 →
+  9.8.2, AGP 8.7.3 → 9.5.1 (built-in Kotlin, kotlin-android plugin dropped from `app`), Kotlin
+  2.1.0 → 2.4.21, KSP → 2.3.13, Hilt 2.60.1, compileSdk 35 → 37 (targetSdk stays 35), androidx
+  (Compose BOM 2026.09.00, navigation 2.10.2, hilt-navigation 1.4.0, work 2.12.0, datastore
+  1.3.0, security-crypto 1.1.0), Ktor 3.6.1, OkHttp 5.5.1 (`CertificatePinner` API unchanged),
+  kotlinx serialization 1.12.0 / coroutines 1.11.0. `kotlinOptions` → `compilerOptions`; the
+  changelog asset copy is now a Variant-API task; `hiltViewModel` import moved; one new lint
+  error fixed (Settings ringtone title read via `stringResource`). CI/release install platform
+  37.0 + build-tools 36.0.0. No locking-logic changes; 185 tests green.

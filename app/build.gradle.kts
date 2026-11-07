@@ -1,8 +1,8 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -25,7 +25,7 @@ val hasReleaseSigning = releaseStoreFile?.exists() == true
 
 android {
     namespace = "io.github.gthibo.leavenlock"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.gthibo.leavenlock"
@@ -70,11 +70,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf("-opt-in=kotlin.RequiresOptIn")
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -87,17 +82,42 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+}
 
-    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/changelog"))
+// AGP 9 compiles Kotlin itself (built-in Kotlin); the kotlin-android plugin is no longer applied.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 // Bundle the root CHANGELOG.md as an app asset so the in-app "What's new" screen can
 // render it. Keeps CHANGELOG.md the single source of truth (no committed copy under src).
-val syncChangelogAsset by tasks.registering(Copy::class) {
-    from(rootProject.file("CHANGELOG.md"))
-    into(layout.buildDirectory.dir("generated/changelog"))
+// AGP 9 only accepts generated dirs through the Variant API, so the copy is a typed task.
+abstract class SyncChangelogAsset : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val changelog: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = outputDir.get().asFile.apply { mkdirs() }
+        changelog.get().asFile.copyTo(File(out, "CHANGELOG.md"), overwrite = true)
+    }
 }
-tasks.named("preBuild").configure { dependsOn(syncChangelogAsset) }
+
+val syncChangelogAsset = tasks.register<SyncChangelogAsset>("syncChangelogAsset") {
+    changelog.set(rootProject.layout.projectDirectory.file("CHANGELOG.md"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(syncChangelogAsset, SyncChangelogAsset::outputDir)
+    }
+}
 
 dependencies {
     implementation(libs.androidx.core.ktx)

@@ -28,7 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.data.settings.NotificationField
@@ -346,11 +346,12 @@ fun SettingsScreen(
                         style = PorcelainText.bodySm,
                         color = mutedText,
                     )
+                    val pickTitle = stringResource(R.string.set_sound_pick_title)
                     Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
                         PgButton(stringResource(R.string.set_sound_choose), modifier = Modifier.weight(1f), variant = ButtonVariant.Tonal, onClick = {
                             val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, context.getString(R.string.set_sound_pick_title))
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, pickTitle)
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false)
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                                 settings.customLockSoundUri?.let {
