@@ -201,13 +201,15 @@ Unlock… button and the refreshed app icon. The GitHub Actions Dependabot bumps
 **Car test 2026-11-06 (Pixel 11 Pro, Ioniq 5, Armed): passed.** Three auto-locks, each confirmed
 on the first cached verify read about 70 s after walking away; the range in miles and the widget
 Unlock flow look right. One pre-lock status read timed out (15 s) and the retry worked. The
-toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, replacing Dependabot
-PRs #6–#10) is on `chore/gradle-upgrade`, green locally and on CI, awaiting a car re-test and the
-user's go-ahead to merge; then close #6–#10 as superseded. Ideas not started yet, in priority
+toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, PR #11) passed a
+second car test (walk-away lock, reconnect-cancel log line, widget Unlock confirmation, What's
+new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new screen now joins
+wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
+Next, in order: tag a `v0.2.0` release (the Unreleased changelog is large); targetSdk 36/37 on
+its own branch with a car test; a replacement plan for `androidx.security:security-crypto`
+(deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
-Follow-ups from the upgrade: `androidx.security:security-crypto` is deprecated upstream
-(`SecureStore` builds with deprecation warnings, needs a replacement plan); targetSdk 36/37 on
-its own branch. New work goes on its own branch cut from `main`.
+New work goes on its own branch cut from `main`.
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only. In the 2026-11-06 car test the cached reads always confirmed first, so it hasn't run
