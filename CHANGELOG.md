@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-11-06
 
 - **"What's new" reads properly.** In Settings → About & changelog, each change now shows as
   one flowing paragraph instead of breaking partway through sentences, and bold titles keep
@@ -79,4 +79,5 @@ Hyundai Ioniq 5 through Hyundai BlueLink (US) when you walk away.
   installed next to the original app.
 - **Tested on** an Ioniq 5 only. Other BlueLink-enabled US Hyundais may work.
 
+[0.2.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.2.0
 [0.1.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.1.0

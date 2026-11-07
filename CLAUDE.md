@@ -205,7 +205,8 @@ toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, PR 
 second car test (walk-away lock, reconnect-cancel log line, widget Unlock confirmation, What's
 new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new screen now joins
 wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
-Next, in order: tag a `v0.2.0` release (the Unreleased changelog is large); targetSdk 36/37 on
+0.2.0 is prepared on `release/0.2.0` (version bump + changelog roll); it is tagged once the
+release-signing secrets are set up. Then, in order: targetSdk 36/37 on
 its own branch with a car test; a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
@@ -297,3 +298,10 @@ New work goes on its own branch cut from `main`.
   changelog asset copy is now a Variant-API task; `hiltViewModel` import moved; one new lint
   error fixed (Settings ringtone title read via `stringResource`). CI/release install platform
   37.0 + build-tools 36.0.0. No locking-logic changes; 185 tests green.
+- 2026-11-06 — What's new joins wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`,
+  `unwrapChangelog`, 4 tests).
+- 0.2.0 (2026-11-06) — First tagged release (v0.1.0 was never tagged; its changelog link 404s).
+  versionCode 1 → 2. `## [Unreleased]` rolled into `## [0.2.0]`; start a new `## [Unreleased]`
+  heading with the next user-facing change. Release title in `release.yml` renamed from the
+  i5-AutoLock leftover "AutoLock" to "Leave-N-Lock". Release APKs are signed from the
+  `RELEASE_*` repo secrets (keystore kept off the repo by the maintainer).

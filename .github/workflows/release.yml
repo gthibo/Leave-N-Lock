@@ -67,8 +67,10 @@ jobs:
         run: |
           version="${{ steps.ver.outputs.version }}"
           # Grab the section between "## [<version>]" and the next "## [" heading.
+          # Literal prefix match: a dynamic regex like "^## \\[" ver is read differently by
+          # gawk and mawk, and gawk turns it into a character class that never matches.
           awk -v ver="$version" '
-            $0 ~ "^## \\[" ver "\\]" {grab=1; next}
+            index($0, "## [" ver "]") == 1 {grab=1; next}
             grab && /^## \[/ {exit}
             grab {print}
           ' CHANGELOG.md > release_notes.md
@@ -99,7 +101,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
-          name: AutoLock ${{ steps.ver.outputs.tag }}
+          name: Leave-N-Lock ${{ steps.ver.outputs.tag }}
           body_path: release_notes.md
           files: ${{ steps.apk.outputs.path }}
           draft: false
