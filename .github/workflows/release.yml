@@ -99,7 +99,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
-          name: AutoLock ${{ steps.ver.outputs.tag }}
+          name: Leave-N-Lock ${{ steps.ver.outputs.tag }}
           body_path: release_notes.md
           files: ${{ steps.apk.outputs.path }}
           draft: false
