@@ -196,6 +196,7 @@ private fun parseInline(text: String, linkColor: Color, codeColor: Color): Annot
 private fun readChangelog(context: android.content.Context): List<String> = runCatching {
     context.assets.open("CHANGELOG.md").bufferedReader().use { it.readLines() }
         .filterNot { it.startsWith("[") && it.contains("]: ") } // drop markdown link references
+        .let(::unwrapChangelog) // one line per bullet/paragraph, not per wrapped source line
         .dropWhile { it.isBlank() }
         .dropLastWhile { it.isBlank() }
 }.getOrDefault(emptyList())

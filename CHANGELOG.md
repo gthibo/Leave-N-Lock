@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **"What's new" reads properly.** In Settings → About & changelog, each change now shows as
+  one flowing paragraph instead of breaking partway through sentences, and bold titles keep
+  their formatting.
 - **Updated build tools and libraries.** LEAVE/LOCK is now built with the current Android
   tools (Gradle 9.8, Android Gradle Plugin 9.5, Kotlin 2.4, Android 17 SDK) and up-to-date
   libraries, including the network client it uses to talk to Hyundai. Nothing should look or
