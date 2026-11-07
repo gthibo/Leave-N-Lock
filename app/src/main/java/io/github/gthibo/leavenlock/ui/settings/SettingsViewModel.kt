@@ -109,8 +109,24 @@ class SettingsViewModel @Inject constructor(
         StatusRefreshWorker.schedule(appContext, minutes)
     }
     fun setHapticOnLock(enabled: Boolean) = update { it.copy(hapticOnLock = enabled) }
-    fun setSoundOnLock(enabled: Boolean) = update { it.copy(soundOnLock = enabled) }
-    fun setCustomLockSoundUri(uri: String?) = update { it.copy(customLockSoundUri = uri) }
+    fun setSoundOnLock(enabled: Boolean) = viewModelScope.launch {
+        settingsRepo.update { it.copy(soundOnLock = enabled) }
+        // Create the sound channels now so they're listed in system settings before the first run.
+        if (enabled) ensureSoundChannels()
+    }
+    fun setCustomLockSoundUri(uri: String?) = viewModelScope.launch {
+        settingsRepo.update { it.copy(customLockSoundUri = uri) }
+        // A channel's sound is fixed once created: switch to the channel for the new sound.
+        ensureSoundChannels()
+    }
+    private suspend fun ensureSoundChannels() {
+        val s = settingsRepo.settings.first()
+        if (s.soundOnLock) {
+            withContext(Dispatchers.IO) {
+                io.github.gthibo.leavenlock.service.SoundCues.ensureChannels(appContext, s.customLockSoundUri)
+            }
+        }
+    }
     fun setLowVoltageAlert(enabled: Boolean) = update { it.copy(lowVoltageAlert = enabled) }
     fun setLowVoltageThreshold(percent: Int) = update { it.copy(lowVoltageThreshold = percent.coerceIn(5, 100)) }
     fun setShowAppBadge(enabled: Boolean) = viewModelScope.launch {
@@ -132,7 +148,7 @@ class SettingsViewModel @Inject constructor(
         io.github.gthibo.leavenlock.data.sound.LockSound.play(appContext, s.customLockSoundUri)
     }
     /** Play the built-in default chime regardless of the custom setting. */
-    fun playDefaultSound() = io.github.gthibo.leavenlock.data.sound.LockSound.playDefault()
+    fun playDefaultSound() = io.github.gthibo.leavenlock.data.sound.LockSound.playDefault(appContext)
     fun setRememberParkedLocation(enabled: Boolean) = update { it.copy(rememberParkedLocation = enabled) }
     fun setScheduleEnabled(enabled: Boolean) = update { it.copy(scheduleEnabled = enabled) }
     fun setScheduleStart(minutes: Int) = update { it.copy(scheduleStartMinutes = minutes) }

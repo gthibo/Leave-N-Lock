@@ -45,7 +45,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AutoLock"
         android:usesCleartextTraffic="false"
-        tools:targetApi="36">
+        tools:targetApi="37">
 
         <activity
             android:name=".MainActivity"

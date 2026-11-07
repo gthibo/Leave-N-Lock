@@ -15,16 +15,18 @@ work. Everything else exists only to make that reliable, private, and effortless
 logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are out of scope.
 
 ## 2. Tech stack
-- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 36`. Toolchain: Gradle 9.8.2,
+- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 37`. Toolchain: Gradle 9.8.2,
   AGP 9.5.1, Kotlin 2.4.21, KSP 2.3.13, Hilt 2.60.1, Ktor 3.6.1, OkHttp 5.5.1.
-  Android 16 target rules in force: edge-to-edge can't be opted out (we never did), predictive
-  back is on (`onBackPressed`/`KEYCODE_BACK` are not delivered: use Compose/`OnBackPressedDispatcher`
-  only), orientation/resize locks are ignored on sw ≥ 600dp (we set none). **`targetSdk 37` is
-  blocked by Android 17 background-audio hardening:** audio from the background needs a
-  foreground service with while-in-use rights, which `AutoLockService` lacks when started by the
-  Bluetooth/geofence receivers, boot or a sticky restart, so `EvChime`/`LockSound` would be
-  silently muted. Moving to 37 needs those sounds redesigned (e.g. via notification channels) and
-  a check that certificate transparency (default on at 37) passes for the Hyundai host.
+  Target rules in force: edge-to-edge can't be opted out (we never did); predictive back is on
+  (`onBackPressed`/`KEYCODE_BACK` are not delivered: use Compose/`OnBackPressedDispatcher` only);
+  orientation/resize locks are ignored on sw ≥ 600dp (set none); certificate transparency is on
+  by default (the Hyundai host's Sectigo cert carries 3 SCTs); widget `RemoteViews` bitmap memory
+  is capped (the widget uses no bitmaps — keep it that way). **Background-audio hardening
+  (Android 17):** the app must never play audio itself from `AutoLockService` — it's usually
+  started from the background (Bluetooth/geofence receivers, boot, sticky restart) without
+  while-in-use rights, so `AudioTrack`/`Ringtone`/`MediaPlayer` there is silently muted. Sounds
+  during a run go through `service/SoundCues` (notification-channel sounds, played by the system);
+  direct playback is only for previews while an activity is visible.
 - UI: Jetpack Compose + Material 3, themed with the **Porcelain Grid** design system
   (`ui/theme/porcelain/`, see §6b). Dynamic colour is **off**; the user picks System default /
   Light / Dark. Fonts are bundled in `res/font/`. No XML layouts (except the widget).
@@ -55,7 +57,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   one vehicle; `clear()` on vehicle switch.
 - `data/metrics/` — `ApiMetrics` (persisted telemetry: op name, duration, outcome only).
 - `data/backup/` — `BackupManager` (non-secret settings export/restore).
-- `data/sound/` — `EvChime`, `LockSound`.
+- `data/sound/` — `EvChime` (pure synth; source of `res/raw/chime_lock.wav` / `chime_start.wav`,
+  `EvChimeTest` checks and regenerates them), `Wav`, `LockSound` (sound URIs + in-app previews).
 - `data/bluelink/` — `BlueLinkClient` (interface), `BlueLinkProvider` (demo → fake, else US),
   `MeteredBlueLinkClient` (times every call into `ApiMetrics`), `CertPins`, `model/`.
   - `us/` — `UsBlueLinkClient` + `UsCredentialStore` (see §4b).
@@ -63,7 +66,9 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 - `domain/` — `detection/` (`DetectionState`, `DetectionEvent`, pure `LockStateMachine`),
   `usecase/LockPolicy` (pure `decide()`), `AutoLockController` (timers + side effects),
   `ActivityLog`, `StatusSummary`.
-- `service/` — `AutoLockService` (foreground, watch mode), `AutoLockNotification`, `NotificationChannels`.
+- `service/` — `AutoLockService` (foreground, watch mode), `AutoLockNotification`, `NotificationChannels`,
+  `SoundCues` (start/lock sounds as short self-removing notifications; `SoundChannelIds` names the
+  channels: `sound_start_v1`, `sound_lock_default` or `sound_lock_c<hash>` per custom sound).
 - `receiver/` — Bluetooth (primary trigger), boot, geofence, activity-transition receivers.
 - `tile/`, `widget/` (`AutoLockWidget`, pure `widgetActionFor` → `WidgetAction`),
   `work/StatusRefreshWorker`, `di/AppModule`.
@@ -212,9 +217,8 @@ new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new
 wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
 **v0.2.0 is released** (tag on 19b63d9, PR #12): signed APK `leave-n-lock-0.2.0.apk` on the
 GitHub Release, cert SHA-256 `a4ffa305…6de218` (keystore + password kept by the maintainer,
-never in the repo). **targetSdk 35 → 36 is on `claude/target-sdk-36` (PR open, awaiting the
-car test; no code changes were needed).** Next, in order: targetSdk 37 on its own branch (needs
-the background-audio redesign in §2); a replacement plan for `androidx.security:security-crypto`
+never in the repo). **targetSdk 35 → 36 is PR #13 (`claude/target-sdk-36`); 36 → 37 with the
+sound rework is stacked on it (`claude/target-sdk-37`). Both await the car test.** Next, in order: a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
 New work goes on its own branch cut from `main`.
@@ -322,3 +326,13 @@ New work goes on its own branch cut from `main`.
   no LAN, no body sensors). Manifest `tools:targetApi` → 36. 37 deferred: Android 17
   background-audio hardening would mute the evaluation chime and lock sound when the service is
   started from the background (see §2). 189 tests green, lint 0 errors.
+- 2026-11-06 — targetSdk 36 → 37 (`claude/target-sdk-37`, stacked on #13). Android 17's
+  background-audio hardening would have muted the start chime and lock sound, so they now play as
+  notification-channel sounds: new `service/SoundCues` posts a short "Auto-lock started" / "Car
+  locked" notification (10 s timeout) on `sound_start_v1` / `sound_lock_*` channels; a custom lock
+  sound gets its own channel (`SoundChannelIds.lockChannelId`) and stale ones are deleted. The
+  synth chimes ship as `res/raw/chime_lock.wav` / `chime_start.wav`, generated from
+  `EvChime.render` (now `StrictMath`, deterministic); `AudioTrack` playback removed. Settings
+  previews play the same files via `Ringtone`. Sounds now follow notification volume / DND and
+  need notifications allowed (Settings copy says so). Hyundai host passes CT (3 SCTs). 7 new tests
+  (196 total), lint 0 errors.
