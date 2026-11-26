@@ -590,9 +590,10 @@ private fun openAppInfo(context: Context) {
 private fun BackgroundLocationNotice(onAllow: () -> Unit, onAppInfo: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
         Text(stringResource(R.string.set_bg_location_needed), style = PorcelainText.bodySm, color = Porcelain.colors.danger)
-        Row(horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
-            PgButton(stringResource(R.string.set_bg_location_allow), onAllow, Modifier.weight(1f), ButtonVariant.Tonal)
-            PgButton(stringResource(R.string.set_app_info), onAppInfo, Modifier.weight(1f), ButtonVariant.Secondary)
+        // Stacked, full width: side by side, "Allow all the time" wrapped onto two cramped lines.
+        Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            PgButton(stringResource(R.string.set_bg_location_allow), onAllow, Modifier.fillMaxWidth(), ButtonVariant.Tonal)
+            PgButton(stringResource(R.string.set_app_info), onAppInfo, Modifier.fillMaxWidth(), ButtonVariant.Secondary)
         }
     }
 }

@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -1521,13 +1522,69 @@ class AutoLockControllerTest {
 
         assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
         assertEquals(0, f.controller.state.value.graceRemaining)
-        coVerify(exactly = 0) { f.client.status(any(), any()) }
+        // The skip refreshes the card from Hyundai's cache only; it never wakes the car.
+        coVerify(exactly = 0) { f.client.status(any(), true) }
         coVerify(exactly = 0) { f.client.lock(any()) }
         assertTrue(
             f.log.entries.value.any {
                 it.message.contains("No walk-away confirmation within the window — not locking.")
             }
         )
+    }
+
+    /** Runs a walk-away run with no confirmation until the 20 s window runs out (skip). */
+    private fun TestScope.skipForNoWalkAway(f: Fixture) {
+        var testTime = 1_000_000L
+        f.controller.clock = { testTime }
+        f.settings.value = f.settings.value.copy(
+            useActivityRecognition = true,
+            requireWalkAwayConfirmation = true,
+        )
+        f.controller.onTriggerFired()
+        runCurrent()
+        testTime += 20_001L
+        advanceTimeBy(250)
+        runCurrent()
+    }
+
+    @Test
+    fun walkAwaySkipRefreshesTheCachedStatus() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        skipForNoWalkAway(f)
+
+        assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
+        // One cached read, saved as a plain read, so Home / widget show the car as it is now.
+        coVerify(exactly = 1) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 1) { f.cache.saveStatus(match { it.lockState == LockState.UNLOCKED }, any(), false) }
+        coVerify(exactly = 0) { f.client.lock(any()) }
+    }
+
+    @Test
+    fun walkAwaySkipStatusFailureStaysQuiet() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), any()) } throws IllegalStateException("no signal")
+
+        skipForNoWalkAway(f)
+
+        assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
+        coVerify(exactly = 0) { f.cache.saveStatus(any(), any(), any()) }
+        // Best effort only: no "Could not read vehicle status" failure for a run that wasn't locking.
+        assertTrue(f.log.entries.value.none { it.message.contains("Could not read vehicle status") })
+    }
+
+    @Test
+    fun geofenceWithoutALocationLogsAWarning() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(useGeofence = true)
+        coEvery { f.locationHelper.currentLocation(any()) } returns null
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.any { it.message.contains("Geofence check skipped") })
     }
 
     @Test
@@ -1586,7 +1643,8 @@ class AutoLockControllerTest {
         assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
         // Only the one starting-point read; with no starting point there is nothing to poll.
         coVerify(exactly = 1) { f.locationHelper.currentLocation(any()) }
-        coVerify(exactly = 0) { f.client.status(any(), any()) }
+        // Only the cached card refresh after the skip; never a live read.
+        coVerify(exactly = 0) { f.client.status(any(), true) }
         coVerify(exactly = 0) { f.client.lock(any()) }
     }
 

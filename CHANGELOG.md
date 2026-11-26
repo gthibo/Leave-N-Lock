@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't
+  confirm you walked away, the Home card, widget and notification kept showing the car's
+  previous state (for example "Locked" when it was really unlocked). It now reads the car's
+  latest reported status in that case too, without waking the car. If the geofence can't get
+  your location, the activity log now says so.
 - **The parked spot is more accurate.** "Parked near" and Open in Maps could be a few blocks
   off, because the app asked for a quick, low-power location (Wi-Fi and cell towers) and would
   take one up to a minute old, from while you were still driving in. It now asks for a GPS fix
