@@ -69,7 +69,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   - `fake/` — `FakeBlueLinkClient` for demo mode and tests.
 - `domain/` — `detection/` (`DetectionState`, `DetectionEvent`, pure `LockStateMachine`),
   `usecase/LockPolicy` (pure `decide()`), `AutoLockController` (timers + side effects),
-  `ActivityLog`, `StatusSummary`.
+  `ActivityLog`, `StatusSummary`, `ManualCommandLog` (pure `manualCommandLogLine`: the Activity-log
+  line for Home's lock/unlock).
 - `service/` — `AutoLockService` (foreground, watch mode), `AutoLockNotification`, `NotificationChannels`,
   `SoundCues` (start/lock sounds as short self-removing notifications; `SoundChannelIds` names the
   channels: `sound_start_v1`, `sound_lock_default` or `sound_lock_c<hash>` per custom sound).
@@ -131,6 +132,9 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
   The widget's "Unlock…" (shown only when `StatusCache` says LOCKED) never unlocks itself: it
   launches `MainActivity.ACTION_CONFIRM_UNLOCK`, which only opens Home's unlock dialog; the
   unlock goes through `HomeViewModel.manualUnlock` (Armed mode, PIN, sign-in). Keep it that way.
+  Home's Lock/Unlock (`HomeViewModel.runManual`) log every outcome to `ActivityLog`, sent or
+  refused (dry run, wrong PIN, no vehicle, session expired), and play no sound: sounds stay
+  reserved for auto-lock.
 - `demoMode` swaps in `FakeBlueLinkClient`.
 - Always read status and run `LockPolicy.decide` before locking: skip if already locked, engine
   running, unknown/stale status, or (default on) a door/window open.
@@ -235,12 +239,11 @@ notification-channel sound rework), after a car test that passed: walk-away lock
 cancel, widget Lock/Unlock…, start chime + lock sound, What's new. Dependabot #15–#20 are merged
 too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
 accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
-Not yet released: these changes are on `main` only (no v0.3.0 tag). No open PRs; `main` is the
-only branch except the one below. **The security-crypto replacement is done on branch
-`claude/secure-store-keystore`** (PR #22, CI green). **Car test 2026-11-26 (Pixel 11 Pro, in-place
+Not yet released: these changes are on `main` only (no v0.3.0 tag). **The security-crypto
+replacement is merged** (PR #22, squash 857b1e3). **Car test 2026-11-26 (Pixel 11 Pro, in-place
 update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
-/ sign-in, no unlock-dialog lag or "PIN needed" failures. Awaiting merge (see 5b, and 9 on 2026-11-26).
+/ sign-in, no unlock-dialog lag or "PIN needed" failures (see 5b, and 9 on 2026-11-26).
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
@@ -378,4 +381,9 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   (sign in again). New JVM tests `AesGcmSecretCipherTest`, `SecureStoreTest`,
   `SecureStoreMigrationTest`; instrumented `SecureStoreDeviceTest` (2 tests, passed on the API 37
   emulator). Follow-ups in 8: drop security-crypto after v0.3.0; fix `data_extraction_rules.xml`.
-  230 tests green, lint 0 errors.
+  230 tests green, lint 0 errors. Merged as #22 after the car test passed.
+- 2026-11-26 — Home's Lock/Unlock now write to the Activity log (`claude/log-manual-lock-unlock`):
+  one line per outcome from pure `domain/manualCommandLogLine` (SUCCESS on success, ERROR with the
+  reason on failure, WARN for rate limit / not signed in / session expired / wrong PIN / no
+  vehicle, INFO for dry run); never the PIN. No sound for in-app commands. `manualLock` /
+  `manualUnlock` share one `runManual`; on-screen messages unchanged. `ManualCommandLogTest`; 234 tests green, lint 0 errors.
