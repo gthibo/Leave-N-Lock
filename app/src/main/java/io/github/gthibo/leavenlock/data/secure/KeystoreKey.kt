@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
 import java.security.KeyStore
+import java.security.ProviderException
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
@@ -24,6 +25,8 @@ object KeystoreKey {
                 return generate(alias, strongBox = true)
             } catch (_: StrongBoxUnavailableException) {
                 // No secure element on this device; fall through to the regular Keystore.
+            } catch (_: ProviderException) {
+                // Some OEM StrongBox implementations throw a plain ProviderException instead.
             }
         }
         return generate(alias, strongBox = false)

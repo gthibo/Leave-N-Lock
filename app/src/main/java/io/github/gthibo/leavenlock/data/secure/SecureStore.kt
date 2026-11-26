@@ -25,7 +25,7 @@ class SecureStore internal constructor(
     constructor(@ApplicationContext context: Context) : this(
         prefs = { context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE) },
         cipher = AesGcmSecretCipher { KeystoreKey.getOrCreate() },
-        legacy = NoLegacySecrets,
+        legacy = LegacySecureStoreReader(context),
         warn = { Log.w("SecureStore", it) },
         primeKey = { KeystoreKey.getOrCreate() },
     )
