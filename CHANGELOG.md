@@ -2,10 +2,16 @@
 
 ## [Unreleased]
 
-- **Built for Android 16.** LEAVE/LOCK now targets Android 16, so it follows that version's
+- **Built for Android 17.** LEAVE/LOCK now targets Android 17, so it follows that version's
   newer rules. On Android 16 and later, the back gesture shows a preview of where you're going
-  (for example, a peek at the home screen) before you let go. Auto-lock, the widget and the
-  notifications should work the same as before.
+  (for example, a peek at the home screen) before you let go.
+- **Lock sounds play as notifications.** Android 17 silences sounds that apps play on their own
+  in the background, which would have muted the auto-lock chimes. With "Sound on lock" on, the
+  start chime and the lock sound now come with a short notification ("Auto-lock started",
+  "Car locked") that clears itself after a few seconds. They follow your notification volume and
+  Do Not Disturb, and you can change or mute each one under Android's notification settings for
+  LEAVE/LOCK ("Auto-lock start sound", "Lock sound"). Notifications need to be allowed for the
+  sounds to play. Your custom lock sound still works.
 
 ## [0.2.0] - 2026-11-06
 

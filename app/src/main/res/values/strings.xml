@@ -4,6 +4,14 @@
     <string name="notification_channel_desc">Shows when LEAVE/LOCK is watching for you leaving the car.</string>
     <string name="notification_channel_min_name">Auto-lock activity (no status-bar icon)</string>
     <string name="notification_channel_min_desc">Same as above, but kept out of the status bar.</string>
+    <string name="sound_channel_start_name">Auto-lock start sound</string>
+    <string name="sound_channel_start_desc">Short chime when your phone leaves the car and auto-lock starts. Only plays when Sound on lock is on.</string>
+    <string name="sound_channel_lock_name">Lock sound</string>
+    <string name="sound_channel_lock_desc">Plays when auto-lock confirms the car is locked. Only plays when Sound on lock is on.</string>
+    <string name="cue_start_title">Auto-lock started</string>
+    <string name="cue_start_body">Checking whether you left the car.</string>
+    <string name="cue_lock_title">Car locked</string>
+    <string name="cue_lock_body">Auto-lock confirmed the car is locked.</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>
@@ -237,7 +245,7 @@
     <string name="set_vibrate_title">Vibrate on lock</string>
     <string name="set_vibrate_sub">Buzz when the car is locked.</string>
     <string name="set_sound_title">Sound on lock</string>
-    <string name="set_sound_sub">Play a short sound when the car is locked.</string>
+    <string name="set_sound_sub">Play a short sound when auto-lock starts and when the car is locked. It plays as a notification, so notification volume and Do Not Disturb apply.</string>
     <string name="set_sound_current">Current: %1$s</string>
     <string name="set_sound_default">Default chime</string>
     <string name="set_sound_pick_title">Choose lock sound</string>

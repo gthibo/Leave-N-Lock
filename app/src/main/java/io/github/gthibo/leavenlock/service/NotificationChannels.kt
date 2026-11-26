@@ -26,7 +26,7 @@ object NotificationChannels {
             ).apply {
                 description = context.getString(R.string.notification_channel_desc)
                 setShowBadge(showBadge)
-                // AutoLock plays its own chime; the channel stays silent.
+                // Sounds have their own channels (SoundCues); this one stays silent.
                 setSound(null, null)
                 enableVibration(false)
             }
