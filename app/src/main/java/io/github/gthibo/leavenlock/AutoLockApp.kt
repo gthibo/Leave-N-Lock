@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import io.github.gthibo.leavenlock.data.secure.SecureStore
 import io.github.gthibo.leavenlock.data.settings.SettingsRepository
 import io.github.gthibo.leavenlock.service.NotificationChannels
 import dagger.hilt.EntryPoint
@@ -27,16 +28,22 @@ class AutoLockApp : Application(), Configuration.Provider {
     @InstallIn(SingletonComponent::class)
     interface AppEntryPoint {
         fun settingsRepo(): SettingsRepository
+        fun secureStore(): SecureStore
     }
 
     override fun onCreate() {
         super.onCreate()
         // Create the channel immediately (badge off), then apply the user's saved preference.
         NotificationChannels.ensure(this, showBadge = false)
-        val repo = EntryPointAccessors.fromApplication(this, AppEntryPoint::class.java).settingsRepo()
-        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+        val entryPoint = EntryPointAccessors.fromApplication(this, AppEntryPoint::class.java)
+        val repo = entryPoint.settingsRepo()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        scope.launch {
             NotificationChannels.ensure(this@AutoLockApp, repo.settings.first().showAppBadge)
         }
+        // Open the secure store, create the Keystore key and migrate the old file off the main thread.
+        val secureStore = entryPoint.secureStore()
+        scope.launch(Dispatchers.IO) { runCatching { secureStore.warmUp() } }
     }
 
     override val workManagerConfiguration: Configuration

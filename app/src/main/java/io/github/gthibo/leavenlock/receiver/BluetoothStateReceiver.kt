@@ -55,7 +55,7 @@ class BluetoothStateReceiver : BroadcastReceiver() {
                         // Arrival: register a battery-friendly geofence around the car so leaving is
                         // detected even without polling or a persistent service.
                         if (settings.useGeofence) {
-                            locationHelper.currentLocation()?.let { loc ->
+                            locationHelper.currentLocation(gpsWaitMs = ARRIVAL_GPS_WAIT_MS)?.let { loc ->
                                 geofenceManager.register(loc.latitude, loc.longitude, settings.geofenceRadiusMeters)
                                 log.add(LogLevel.INFO, "Arrived at the car — geofence armed.")
                             }
@@ -70,4 +70,12 @@ class BluetoothStateReceiver : BroadcastReceiver() {
 
     private fun String.equalsIgnoreCase(other: String?): Boolean =
         other != null && this.equals(other, ignoreCase = true)
+
+    private companion object {
+        /**
+         * GPS wait for the geofence centre. Kept short: this runs under `goAsync()`, and the
+         * whole fix (GPS try + balanced fallback) has to finish well inside the receiver's limit.
+         */
+        const val ARRIVAL_GPS_WAIT_MS = 5_000L
+    }
 }

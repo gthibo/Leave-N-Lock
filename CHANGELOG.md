@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+- **The parked spot is more accurate.** "Parked near" and Open in Maps could be a few blocks
+  off, because the app asked for a quick, low-power location (Wi-Fi and cell towers) and would
+  take one up to a minute old, from while you were still driving in. It now asks for a GPS fix
+  when the car's Bluetooth disconnects and only uses a location from the last few seconds; if
+  GPS can't get one in time (for example in a garage), it falls back to the low-power location.
+  The walk-away check and the spot it measures from use the same, more accurate location. If
+  Android's location for LEAVE/LOCK is set to approximate, the activity log now says so.
+- **Lock and unlock from the app show up in the activity log.** Pressing Lock or Unlock on the
+  Home screen now adds a line to the activity log saying whether it worked, failed (and why), or
+  wasn't sent (for example a wrong PIN or Dry run mode). They don't play a sound; sounds are
+  only for auto-lock.
+- **Sign-in storage updated.** Your stored PIN and BlueLink sign-in now use the Android Keystore
+  directly, because the library they used before is deprecated. They carry over automatically.
+  If you go back to 0.2.0 after updating, you will need to sign in again.
 - **Built for Android 17.** LEAVE/LOCK now targets Android 17, so it follows that version's
   newer rules. On Android 16 and later, the back gesture shows a preview of where you're going
   (for example, a peek at the home screen) before you let go.

@@ -28,6 +28,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -1117,6 +1118,92 @@ class AutoLockControllerTest {
     }
 
     @Test
+    fun slowParkedFixDoesNotHoldUpTheLockFlow() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(rememberParkedLocation = true)
+        // A GPS fix can take up to ~20 s (LocationHelper.PARKED_GPS_WAIT_MS).
+        coEvery { f.locationHelper.currentParkedPlace() } coAnswers {
+            delay(20_000)
+            ParkedPlace(lat = 29.7030, lng = -98.1245, label = "12 Market St, New Braunfels")
+        }
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        // The evaluation is already in its grace period while the fix is still coming.
+        assertEquals(DetectionState.GRACE, f.controller.state.value.detection)
+        assertNull(f.settings.value.parkedLabel)
+
+        advanceTimeBy(20_001)
+        runCurrent()
+
+        assertEquals("12 Market St, New Braunfels", f.settings.value.parkedLabel)
+        assertEquals(29.7030, f.settings.value.parkedLat)
+    }
+
+    @Test
+    fun reconnectBeforeTheParkedFixArrivesSavesNoSpot() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(rememberParkedLocation = true)
+        coEvery { f.locationHelper.currentParkedPlace() } coAnswers {
+            delay(20_000)
+            ParkedPlace(lat = 1.0, lng = 2.0, label = "Somewhere else")
+        }
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        f.controller.cancel(reason = "Car Bluetooth reconnected")
+        advanceTimeBy(20_001)
+        runCurrent()
+
+        assertNull(f.settings.value.parkedLabel)
+        assertNull(f.settings.value.parkedLat)
+    }
+
+    @Test
+    fun approximateLocationOnlyLogsAWarning() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(rememberParkedLocation = true)
+        every { f.locationHelper.hasPreciseLocation() } returns false
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.any { it.message.contains("approximate") })
+    }
+
+    @Test
+    fun preciseLocationLogsNoApproximateWarning() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(rememberParkedLocation = true)
+        every { f.locationHelper.hasPreciseLocation() } returns true
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.none { it.message.contains("approximate") })
+    }
+
+    @Test
+    fun failedParkedFixIsLoggedAndDoesNotStopTheRun() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(rememberParkedLocation = true)
+        every { f.locationHelper.hasPreciseLocation() } returns true
+        coEvery { f.locationHelper.currentParkedPlace() } throws IllegalStateException("boom")
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        assertEquals(DetectionState.GRACE, f.controller.state.value.detection)
+        assertTrue(f.log.entries.value.any { it.message.contains("Couldn't save the parked spot") })
+    }
+
+    @Test
     fun missingVehicleIdLogsWarningAndExitsCleanly() = runTest {
         val f = Fixture(backgroundScope)
         f.settings.value = f.settings.value.copy(
@@ -1339,7 +1426,7 @@ class AutoLockControllerTest {
         val carSpot = mockk<Location>()
         val yourSpot = mockk<Location>()
         every { carSpot.distanceTo(any()) } answers { distanceMeters() }
-        coEvery { f.locationHelper.currentLocation() } returnsMany listOf(carSpot, yourSpot)
+        coEvery { f.locationHelper.currentLocation(any()) } returnsMany listOf(carSpot, yourSpot)
     }
 
     /** First status read = unlocked, later reads = locked with a newer timestamp. */
@@ -1485,7 +1572,7 @@ class AutoLockControllerTest {
             requireWalkAwayConfirmation = true,
         )
         // No GPS fix (e.g. location permission missing): the controller can never confirm you left.
-        coEvery { f.locationHelper.currentLocation() } returns null
+        coEvery { f.locationHelper.currentLocation(any()) } returns null
 
         f.controller.onTriggerFired()
         runCurrent()
@@ -1498,7 +1585,7 @@ class AutoLockControllerTest {
 
         assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
         // Only the one starting-point read; with no starting point there is nothing to poll.
-        coVerify(exactly = 1) { f.locationHelper.currentLocation() }
+        coVerify(exactly = 1) { f.locationHelper.currentLocation(any()) }
         coVerify(exactly = 0) { f.client.status(any(), any()) }
         coVerify(exactly = 0) { f.client.lock(any()) }
     }
@@ -1509,7 +1596,7 @@ class AutoLockControllerTest {
         f.settings.value = f.settings.value.copy(
             useGeofence = true,
         )
-        coEvery { f.locationHelper.currentLocation() } returns null
+        coEvery { f.locationHelper.currentLocation(any()) } returns null
         stubUnlockedThenLocked(f, System.currentTimeMillis())
 
         f.controller.onTriggerFired()

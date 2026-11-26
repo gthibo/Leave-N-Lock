@@ -3,6 +3,8 @@ package io.github.gthibo.leavenlock.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.gthibo.leavenlock.data.bluelink.BlueLinkProvider
+import io.github.gthibo.leavenlock.data.bluelink.model.CommandResult
+import io.github.gthibo.leavenlock.data.bluelink.model.LockState
 import io.github.gthibo.leavenlock.data.bluelink.model.VehicleStatus
 import io.github.gthibo.leavenlock.data.bluelink.model.mergedOnto
 import io.github.gthibo.leavenlock.data.settings.AppSettings
@@ -12,6 +14,9 @@ import io.github.gthibo.leavenlock.domain.ActivityLog
 import io.github.gthibo.leavenlock.domain.AutoLockController
 import io.github.gthibo.leavenlock.domain.AutoLockUiState
 import io.github.gthibo.leavenlock.domain.LogEntry
+import io.github.gthibo.leavenlock.domain.ManualCommand
+import io.github.gthibo.leavenlock.domain.ManualOutcome
+import io.github.gthibo.leavenlock.domain.manualCommandLogLine
 import io.github.gthibo.leavenlock.domain.StatusSummary
 import io.github.gthibo.leavenlock.service.AutoLockService
 import io.github.gthibo.leavenlock.work.StatusRefreshWorker
@@ -52,7 +57,7 @@ class HomeViewModel @Inject constructor(
     private val statusCache: StatusCache,
     private val metrics: io.github.gthibo.leavenlock.data.metrics.ApiMetrics,
     private val secureStore: io.github.gthibo.leavenlock.data.secure.SecureStore,
-    activityLog: ActivityLog,
+    private val activityLog: ActivityLog,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = settingsRepo.settings
@@ -110,76 +115,66 @@ class HomeViewModel @Inject constructor(
     fun clearLockResult() { _lockResult.value = null }
 
     /** Manually lock now — gated by the BlueLink PIN when one is stored. */
-    fun manualLock(pin: String?) = viewModelScope.launch {
+    fun manualLock(pin: String?) = runManual(ManualCommand.LOCK, pin)
+
+    /** Manually unlock now — gated by the BlueLink PIN when one is stored. */
+    fun manualUnlock(pin: String?) = runManual(ManualCommand.UNLOCK, pin)
+
+    /**
+     * Runs a lock/unlock pressed on Home. The on-screen result goes to [lockResult]; every outcome
+     * (sent or refused) also gets one Activity-log line via [manualCommandLogLine]. No sound:
+     * the user is looking at the screen, and sounds stay reserved for auto-lock.
+     */
+    private fun runManual(command: ManualCommand, pin: String?) = viewModelScope.launch {
         val s = settingsRepo.settings.first()
+        fun finish(outcome: ManualOutcome, onScreen: String) {
+            _lockResult.value = onScreen
+            val (level, line) = manualCommandLogLine(command, outcome)
+            activityLog.add(level, line)
+        }
         if (s.runMode != RunMode.ARMED) {
-            _lockResult.value = "Dry run — no lock command sent."
+            finish(ManualOutcome.DryRun, "Dry run — no ${command.noun} command sent.")
             return@launch
         }
         val stored = secureStore.loadPin()
         if (stored != null && pin != stored) {
-            _lockResult.value = "Incorrect PIN."
+            finish(ManualOutcome.WrongPin, "Incorrect PIN.")
             return@launch
         }
-        val vehicleId = s.vehicleId ?: run { _lockResult.value = "No vehicle selected."; return@launch }
+        val vehicleId = s.vehicleId ?: run {
+            finish(ManualOutcome.NoVehicle, "No vehicle selected.")
+            return@launch
+        }
         val client = provider.client(s)
         if (!s.demoMode && !client.ensureFreshSession()) {
-            _lockResult.value = "Session expired — sign in again."
+            finish(ManualOutcome.SessionExpired, "Session expired — sign in again.")
             _vehicleStatus.update { it.copy(needsReauth = true) }
             return@launch
         }
-        when (val result = client.lock(vehicleId)) {
-            is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Success -> {
-                _lockResult.value = "Locked ✓"
+        val result = when (command) {
+            ManualCommand.LOCK -> client.lock(vehicleId)
+            ManualCommand.UNLOCK -> client.unlock(vehicleId)
+        }
+        val sent = ManualOutcome.Sent(result)
+        when (result) {
+            is CommandResult.Success -> {
+                finish(sent, "${command.pastTense} ✓")
                 // Hyundai's cached snapshot lags the command by minutes; saving it as a command
                 // keeps older reads from flipping the card back (see CachedStatus.after).
                 saveCommandResult(s) {
-                    it.copy(lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.LOCKED, anyDoorOpen = false)
+                    when (command) {
+                        ManualCommand.LOCK -> it.copy(lockState = LockState.LOCKED, anyDoorOpen = false)
+                        ManualCommand.UNLOCK -> it.copy(lockState = LockState.UNLOCKED)
+                    }
                 }
             }
-            io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.RateLimited -> _lockResult.value = "Rate-limited — try again shortly."
-            io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.NotAuthenticated -> {
-                _lockResult.value = "Not signed in."
+            CommandResult.RateLimited -> finish(sent, "Rate-limited — try again shortly.")
+            CommandResult.NotAuthenticated -> {
+                finish(sent, "Not signed in.")
                 _vehicleStatus.update { it.copy(needsReauth = true) }
             }
-            is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Failure ->
-                _lockResult.value = "Lock failed: ${result.reason}"
-        }
-    }
-
-    /** Manually unlock now — gated by the BlueLink PIN when one is stored. */
-    fun manualUnlock(pin: String?) = viewModelScope.launch {
-        val s = settingsRepo.settings.first()
-        if (s.runMode != RunMode.ARMED) {
-            _lockResult.value = "Dry run — no unlock command sent."
-            return@launch
-        }
-        val stored = secureStore.loadPin()
-        if (stored != null && pin != stored) {
-            _lockResult.value = "Incorrect PIN."
-            return@launch
-        }
-        val vehicleId = s.vehicleId ?: run { _lockResult.value = "No vehicle selected."; return@launch }
-        val client = provider.client(s)
-        if (!s.demoMode && !client.ensureFreshSession()) {
-            _lockResult.value = "Session expired — sign in again."
-            _vehicleStatus.update { it.copy(needsReauth = true) }
-            return@launch
-        }
-        when (val result = client.unlock(vehicleId)) {
-            is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Success -> {
-                _lockResult.value = "Unlocked ✓"
-                saveCommandResult(s) {
-                    it.copy(lockState = io.github.gthibo.leavenlock.data.bluelink.model.LockState.UNLOCKED)
-                }
-            }
-            io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.RateLimited -> _lockResult.value = "Rate-limited — try again shortly."
-            io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.NotAuthenticated -> {
-                _lockResult.value = "Not signed in."
-                _vehicleStatus.update { it.copy(needsReauth = true) }
-            }
-            is io.github.gthibo.leavenlock.data.bluelink.model.CommandResult.Failure ->
-                _lockResult.value = "Unlock failed: ${result.reason}"
+            is CommandResult.Failure ->
+                finish(sent, "${command.noun.replaceFirstChar { it.uppercase() }} failed: ${result.reason}")
         }
     }
 
