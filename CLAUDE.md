@@ -15,7 +15,7 @@ work. Everything else exists only to make that reliable, private, and effortless
 logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are out of scope.
 
 ## 2. Tech stack
-- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 37`. Toolchain: Gradle 9.8.2,
+- 100% Kotlin, JDK 17, `minSdk 26`, `compileSdk 37`, `targetSdk 37`. Toolchain: Gradle 9.9.0,
   AGP 9.5.1, Kotlin 2.4.21, KSP 2.3.13, Hilt 2.60.1, Ktor 3.6.1, OkHttp 5.5.1.
   Target rules in force: edge-to-edge can't be opted out (we never did); predictive back is on
   (`onBackPressed`/`KEYCODE_BACK` are not delivered: use Compose/`OnBackPressedDispatcher` only);
@@ -206,7 +206,7 @@ Read `design/README.md` before any UI, theme, icon, copy or notification work.
   GitHub Release (signed if the `RELEASE_*` secrets exist).
 
 ## 8. Open TODOs / known gaps
-**Where we left off (2026-11-06):** `main` holds everything and is pushed, including the widget
+**Where we left off (2026-11-26):** `main` holds everything and is pushed, including the widget
 Unlock… button and the refreshed app icon. The GitHub Actions Dependabot bumps are merged.
 **Car test 2026-11-06 (Pixel 11 Pro, Ioniq 5, Armed): passed.** Three auto-locks, each confirmed
 on the first cached verify read about 70 s after walking away; the range in miles and the widget
@@ -214,11 +214,16 @@ Unlock flow look right. One pre-lock status read timed out (15 s) and the retry 
 toolchain upgrade (Gradle 9.8.2 / AGP 9.5.1 / Kotlin 2.4.21 / compileSdk 37, PR #11) passed a
 second car test (walk-away lock, reconnect-cancel log line, widget Unlock confirmation, What's
 new) and is merged; Dependabot #6–#10 are closed as superseded. The What's new screen now joins
-wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`). No open PRs; `main` is the only branch.
+wrapped CHANGELOG lines (`ui/about/ChangelogText.kt`).
 **v0.2.0 is released** (tag on 19b63d9, PR #12): signed APK `leave-n-lock-0.2.0.apk` on the
 GitHub Release, cert SHA-256 `a4ffa305…6de218` (keystore + password kept by the maintainer,
-never in the repo). **targetSdk 35 → 36 is PR #13 (`claude/target-sdk-36`); 36 → 37 with the
-sound rework is stacked on it (`claude/target-sdk-37`). Both await the car test.** Next, in order: a replacement plan for `androidx.security:security-crypto`
+never in the repo). **targetSdk 37 is merged** (PR #13: 35 → 36; PR #14: 36 → 37 with the
+notification-channel sound rework), after a car test that passed: walk-away lock, reconnect
+cancel, widget Lock/Unlock…, start chime + lock sound, What's new. Dependabot #15–#20 are merged
+too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
+accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
+Not yet released: these changes are on `main` only (no v0.3.0 tag). No open PRs; `main` is the
+only branch. Next, in order: a replacement plan for `androidx.security:security-crypto`
 (deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
 order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
 New work goes on its own branch cut from `main`.
@@ -336,3 +341,7 @@ New work goes on its own branch cut from `main`.
   previews play the same files via `Ringtone`. Sounds now follow notification volume / DND and
   need notifications allowed (Settings copy says so). Hyundai host passes CT (3 SCTs). 7 new tests
   (196 total), lint 0 errors.
+- 2026-11-26 — Merged #13 and #14 after the car test passed, then Dependabot #15–#20 (setup-java
+  4 → 6, Gradle wrapper 9.8.2 → 9.9.0, play-services-location 21.3.0 → 21.4.0,
+  accompanist-permissions 0.36.0 → 0.37.3, turbine 1.2.0 → 1.2.1, mockk 1.13.13 → 1.14.12).
+  #14 was brought up to date by merging `main` into it (no force-push). CI green on `72c9377`.
