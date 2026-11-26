@@ -39,10 +39,58 @@ class SecureStore internal constructor(
         } catch (e: Exception) {
             warn("Keystore key unavailable: ${e.javaClass.simpleName}")
         }
-        if (!opened.contains(KEY_MIGRATED) && !legacy.exists()) {
-            opened.edit().putInt(KEY_MIGRATED, 1).commit()
+        try {
+            migrate(opened)
+        } catch (e: Exception) {
+            warn("Migration not saved: ${e.javaClass.simpleName}")
         }
         return opened
+    }
+
+    /**
+     * Moves the old store's values into [target] once (design §5). Runs inside the synchronized
+     * open, so once per instance. A failure before the commit leaves both files untouched and is
+     * retried by the next instance (next process); until then reads return null.
+     */
+    private fun migrate(target: SharedPreferences) {
+        if (target.contains(KEY_MIGRATED)) {
+            if (legacy.exists()) deleteLegacy()
+            return
+        }
+        if (!legacy.exists()) {
+            target.edit().putInt(KEY_MIGRATED, 1).commit()
+            return
+        }
+        val old = try {
+            legacy.read()
+        } catch (e: Exception) {
+            warn("Old secure store unreadable: ${e.javaClass.simpleName}")
+            if (target.edit().putInt(KEY_MIGRATED, 1).commit()) {
+                deleteLegacy()
+            } else {
+                warn("Migration not saved: commit failed")
+            }
+            return
+        }
+        val encrypted = listOf(KEY_PIN to old.pin, KEY_US_USERNAME to old.usUsername,
+            KEY_US_PASSWORD to old.usPassword)
+            .mapNotNull { (key, value) -> value?.let { key to cipher.encrypt(it, key) } }
+        val editor = target.edit()
+        encrypted.forEach { (key, blob) -> editor.putString(key, blob) }
+        editor.putInt(KEY_MIGRATED, 1)
+        if (editor.commit()) {
+            deleteLegacy()
+        } else {
+            warn("Migration not saved: commit failed")
+        }
+    }
+
+    private fun deleteLegacy() {
+        try {
+            legacy.delete()
+        } catch (e: Exception) {
+            warn("Old secure store not deleted: ${e.javaClass.simpleName}")
+        }
     }
 
     /** Opens the store and primes the Keystore key now, so callers can do it off the main thread. */
