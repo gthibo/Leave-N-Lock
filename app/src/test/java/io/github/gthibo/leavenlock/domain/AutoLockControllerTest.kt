@@ -1532,6 +1532,36 @@ class AutoLockControllerTest {
         )
     }
 
+    @Test
+    fun walkingDuringTheConfirmWindowIsLoggedOnce() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(
+            useActivityRecognition = true,
+            requireWalkAwayConfirmation = true,
+        )
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        assertEquals(DetectionState.CONFIRMING, f.controller.state.value.detection)
+
+        f.controller.onWalkingConfirmed()
+        f.controller.onWalkingConfirmed() // Activity Recognition can report the same walk twice.
+        runCurrent()
+
+        assertEquals(1, f.log.entries.value.count { it.message == "Walking detected — confirmed you left." })
+    }
+
+    @Test
+    fun walkingWithNoRunInProgressLogsNothing() = runTest {
+        val f = Fixture(backgroundScope)
+
+        f.controller.onWalkingConfirmed()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.none { it.message.startsWith("Walking detected") })
+    }
+
     /** Runs a walk-away run with no confirmation until the 20 s window runs out (skip). */
     private fun TestScope.skipForNoWalkAway(f: Fixture) {
         var testTime = 1_000_000L

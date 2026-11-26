@@ -76,6 +76,10 @@ class AutoLockController @Inject constructor(
     }
 
     fun onWalkingConfirmed() = scope.launch {
+        // Say why a run went ahead (the geofence logs its own line); once per run, only mid-run.
+        if (_state.value.detection == DetectionState.CONFIRMING && !walkAwayConfirmed) {
+            log.add(LogLevel.INFO, "Walking detected — confirmed you left.")
+        }
         walkAwayConfirmed = true
         machine?.let { advance(it.next(_state.value.detection, DetectionEvent.WalkingConfirmed)) }
     }

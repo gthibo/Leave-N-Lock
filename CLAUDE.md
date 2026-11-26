@@ -105,7 +105,9 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
    the lock); `cancel()` cancels it (a reconnect means it wasn't a parking spot). It logs a WARN
    if only approximate location is granted. Readers: Home card + Open in Maps (lat/lng, label as
    pin name) and the departure notification (label). The widget doesn't show it.
-   If the geofence is on but has no starting fix, a WARN says so. A skip for "no walk-away
+   The log says what confirmed a run: "Walking detected — confirmed you left." (Activity
+   Recognition, once per run, only while CONFIRMING) or "Moved beyond the geofence — confirmed you
+   left.". If the geofence is on but has no starting fix, a WARN says so. A skip for "no walk-away
    confirmation" calls `refreshStatusAfterSkip()`: one cached `status(forceRefresh = false)` read
    saved to `StatusCache` (best effort, silent on failure, never a live read), so Home / widget /
    notification don't keep the previous run's lock state.
@@ -433,4 +435,5 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   Car test feedback: the walk-away skip now refreshes the cached status (`refreshStatusAfterSkip`;
   two tests that asserted "no status read on skip" now assert "no live read"); WARN when the
   geofence has no starting fix; the notice's buttons are stacked full width ("Allow all the time"
-  wrapped when side by side). 3 new tests, 252 green.
+  wrapped when side by side). 3 new tests, 252 green. Then an INFO line when walking confirms a
+  run (a lock with background location off had no visible reason); 2 tests, 254 green.
