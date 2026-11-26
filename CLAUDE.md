@@ -237,7 +237,10 @@ too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
 accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
 Not yet released: these changes are on `main` only (no v0.3.0 tag). No open PRs; `main` is the
 only branch except the one below. **The security-crypto replacement is done on branch
-`claude/secure-store-keystore`**, awaiting PR, CI and a car test (see 5b, and 9 on 2026-11-26).
+`claude/secure-store-keystore`** (PR #22, CI green). **Car test 2026-11-26 (Pixel 11 Pro, in-place
+update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
+`autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
+/ sign-in, no unlock-dialog lag or "PIN needed" failures. Awaiting merge (see 5b, and 9 on 2026-11-26).
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
