@@ -191,4 +191,26 @@ class SecureStoreMigrationTest {
         assertEquals(1, legacy.reads)
         assertEquals(List(8) { "1234" }, pins)
     }
+
+    @Test
+    fun migratedValuesAreServedFromCache() {
+        var decrypts = 0
+        val real = AesGcmSecretCipher { key }
+        val counting = object : SecretCipher {
+            override fun encrypt(plain: String, aad: String) = real.encrypt(plain, aad)
+            override fun decrypt(blob: String, aad: String): String {
+                decrypts++
+                return real.decrypt(blob, aad)
+            }
+        }
+        val s = store(FakeLegacy(LegacySecrets("1234", "me@x.com", "hunter2")), counting)
+        s.warmUp()
+        val afterWarmUp = decrypts
+        repeat(3) {
+            assertEquals("1234", s.loadPin())
+            assertEquals("me@x.com", s.loadUsUsername())
+            assertEquals("hunter2", s.loadUsPassword())
+        }
+        assertEquals(afterWarmUp, decrypts)
+    }
 }

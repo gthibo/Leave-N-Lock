@@ -30,7 +30,24 @@ class SecureStore internal constructor(
         primeKey = { KeystoreKey.getOrCreate() },
     )
 
-    private val prefs: SharedPreferences by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { open(prefs) }
+    private val source = prefs
+    private val lock = Any()
+    private var opened: SharedPreferences? = null
+
+    /** Decrypted values, guarded by [lock]. In memory only, never logged. */
+    private val cache = HashMap<String, String>()
+
+    /**
+     * Runs [block] under [lock] with the opened prefs, opening them first if needed. `justOpened`
+     * is true when this call did the open (which already tried every value once).
+     */
+    private fun <T> withPrefs(block: (prefs: SharedPreferences, justOpened: Boolean) -> T): T =
+        synchronized(lock) {
+            opened?.let { return@synchronized block(it, false) }
+            val p = open(source)
+            opened = p
+            block(p, true)
+        }
 
     private fun open(source: () -> SharedPreferences): SharedPreferences {
         val opened = source()
@@ -44,6 +61,7 @@ class SecureStore internal constructor(
         } catch (e: Exception) {
             warn("Migration not saved: ${e.javaClass.simpleName}")
         }
+        SECRET_KEYS.forEach { decryptLocked(opened, it) }
         return opened
     }
 
@@ -96,9 +114,12 @@ class SecureStore internal constructor(
         }
     }
 
-    /** Opens the store and primes the Keystore key now, so callers can do it off the main thread. */
+    /**
+     * Opens the store, primes the Keystore key and decrypts every value into memory now, so callers
+     * can do it off the main thread.
+     */
     fun warmUp() {
-        prefs
+        withPrefs { _, _ -> }
     }
 
     /** BlueLink service PIN, sent with every remote lock/unlock command. */
@@ -114,36 +135,51 @@ class SecureStore internal constructor(
         save(KEY_US_USERNAME to username, KEY_US_PASSWORD to password)
     fun loadUsUsername(): String? = load(KEY_US_USERNAME)
     fun loadUsPassword(): String? = load(KEY_US_PASSWORD)
-    fun clearUsCredentials() {
-        prefs.edit().remove(KEY_US_USERNAME).remove(KEY_US_PASSWORD).commit()
-    }
+    fun clearUsCredentials() = remove(KEY_US_USERNAME, KEY_US_PASSWORD)
 
     /** Removes the secrets; keeps the migration marker so old data is never resurrected. */
-    fun clear() {
-        prefs.edit().remove(KEY_PIN).remove(KEY_US_USERNAME).remove(KEY_US_PASSWORD).commit()
+    fun clear() = remove(*SECRET_KEYS)
+
+    private fun remove(vararg keys: String) = withPrefs { prefs, _ ->
+        val editor = prefs.edit()
+        keys.forEach { editor.remove(it) }
+        editor.commit()
+        keys.forEach { cache.remove(it) }
     }
 
-    private fun save(vararg entries: Pair<String, String>) {
+    private fun save(vararg entries: Pair<String, String>) = withPrefs { prefs, _ ->
         try {
             val encrypted = entries.map { (key, value) -> key to cipher.encrypt(value, key) }
             val editor = prefs.edit()
             encrypted.forEach { (key, blob) -> editor.putString(key, blob) }
-            if (!editor.commit()) warn("Secure value not saved: commit failed")
+            if (editor.commit()) {
+                cache.putAll(entries)
+            } else {
+                warn("Secure value not saved: commit failed")
+            }
         } catch (e: Exception) {
             warn("Secure value not saved: ${e.javaClass.simpleName}")
         }
     }
 
-    private fun load(key: String): String? {
+    /** Served from memory; a value the open could not decrypt is tried again on the next call. */
+    private fun load(key: String): String? = withPrefs { prefs, justOpened ->
+        cache[key] ?: if (justOpened) null else decryptLocked(prefs, key)
+    }
+
+    /** Decrypts [key] into [cache]. Call only while holding [lock]. */
+    private fun decryptLocked(prefs: SharedPreferences, key: String): String? {
         val blob = prefs.getString(key, null) ?: return null
         return try {
-            cipher.decrypt(blob, key)
+            cipher.decrypt(blob, key).also { cache[key] = it }
         } catch (e: Exception) {
             warn("Secure value unreadable: ${e.javaClass.simpleName}")
             // Only drop the value when the blob itself is provably bad; a transient Keystore
-            // error must not destroy a secret that may still decrypt later.
-            if (e is AEADBadTagException || e is IllegalArgumentException ||
-                e is KeyPermanentlyInvalidatedException
+            // error must not destroy a secret that may still decrypt later. Remove it only if it
+            // is still the blob we read, so a newer value is never deleted.
+            if ((e is AEADBadTagException || e is IllegalArgumentException ||
+                    e is KeyPermanentlyInvalidatedException) &&
+                prefs.getString(key, null) == blob
             ) {
                 prefs.edit().remove(key).commit()
             }
@@ -157,5 +193,6 @@ class SecureStore internal constructor(
         const val KEY_PIN = "service_pin"
         const val KEY_US_USERNAME = "us_username"
         const val KEY_US_PASSWORD = "us_password"
+        val SECRET_KEYS = arrayOf(KEY_PIN, KEY_US_USERNAME, KEY_US_PASSWORD)
     }
 }

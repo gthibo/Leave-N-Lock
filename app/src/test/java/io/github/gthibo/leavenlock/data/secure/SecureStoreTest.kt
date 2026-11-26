@@ -1,6 +1,7 @@
 package io.github.gthibo.leavenlock.data.secure
 
 import java.security.ProviderException
+import javax.crypto.AEADBadTagException
 import javax.crypto.KeyGenerator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -131,5 +132,86 @@ class SecureStoreTest {
         val s = storeWith(AesGcmSecretCipher { key }, warnings) { throw ProviderException("x") }
         s.warmUp()
         assertEquals(listOf("Keystore key unavailable: ProviderException"), warnings)
+    }
+
+    /** Wraps a real cipher, counts decrypts, and runs [beforeDecrypt] before each one. */
+    private class CountingCipher(
+        private val inner: SecretCipher,
+        var beforeDecrypt: (Int) -> Unit = {},
+    ) : SecretCipher {
+        var decrypts = 0
+            private set
+
+        override fun encrypt(plain: String, aad: String) = inner.encrypt(plain, aad)
+        override fun decrypt(blob: String, aad: String): String {
+            decrypts++
+            beforeDecrypt(decrypts)
+            return inner.decrypt(blob, aad)
+        }
+    }
+
+    @Test
+    fun loadsServedFromCacheAfterOpen() {
+        store.savePin("1234")
+        val counting = CountingCipher(AesGcmSecretCipher { key })
+        val s = storeWith(counting)
+        s.warmUp()
+        val afterWarmUp = counting.decrypts
+        assertEquals(1, afterWarmUp)
+        repeat(5) { assertEquals("1234", s.loadPin()) }
+        assertEquals(afterWarmUp, counting.decrypts)
+    }
+
+    @Test
+    fun transientDecryptFailureIsRetriedNextCall() {
+        store.savePin("1234")
+        val counting = CountingCipher(AesGcmSecretCipher { key }) { n ->
+            if (n == 1) throw ProviderException("strongbox busy")
+        }
+        val s = storeWith(counting)
+        assertNull(s.loadPin())
+        assertTrue(fake.contains("service_pin"))
+        assertEquals("1234", s.loadPin())
+        assertTrue(fake.contains("service_pin"))
+    }
+
+    @Test
+    fun saveUpdatesCacheAndFailedSaveDoesNot() {
+        store.savePin("1234")
+        assertEquals("1234", store.loadPin())
+        fake.failCommits = true
+        store.savePin("5678")
+        assertEquals("1234", store.loadPin())
+    }
+
+    @Test
+    fun clearRemovesFromCache() {
+        store.saveUsCredentials("me@x.com", "hunter2")
+        val counting = CountingCipher(AesGcmSecretCipher { key })
+        val s = storeWith(counting)
+        s.warmUp()
+        val before = counting.decrypts
+        s.clearUsCredentials()
+        assertNull(s.loadUsUsername())
+        assertNull(s.loadUsPassword())
+        assertEquals(before, counting.decrypts)
+    }
+
+    @Test
+    fun badBlobRemovalDoesNotDeleteConcurrentSave() {
+        store.savePin("1234")
+        val newer = fake.getString("service_pin", null)
+        fake.edit().putString("service_pin", "v1:garbage").commit()
+        val counting = CountingCipher(AesGcmSecretCipher { key }) { n ->
+            if (n == 1) {
+                // A newer value lands between the read of the blob and its removal.
+                fake.edit().putString("service_pin", newer).commit()
+                throw AEADBadTagException("tampered")
+            }
+        }
+        val s = storeWith(counting)
+        assertNull(s.loadPin())
+        assertEquals(newer, fake.getString("service_pin", null))
+        assertEquals("1234", s.loadPin())
     }
 }

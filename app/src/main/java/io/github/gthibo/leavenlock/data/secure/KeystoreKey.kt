@@ -3,7 +3,7 @@ package io.github.gthibo.leavenlock.data.secure
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.security.keystore.StrongBoxUnavailableException
+import java.security.GeneralSecurityException
 import java.security.KeyStore
 import java.security.ProviderException
 import javax.crypto.KeyGenerator
@@ -16,17 +16,23 @@ import javax.crypto.SecretKey
 object KeystoreKey {
     private const val PROVIDER = "AndroidKeyStore"
 
+    /** Key handles by alias, cached after the first successful get or create. */
+    private val cached = HashMap<String, SecretKey>()
+
     @Synchronized
-    fun getOrCreate(alias: String = "leavenlock_secure_v1"): SecretKey {
+    fun getOrCreate(alias: String = "leavenlock_secure_v1"): SecretKey =
+        cached[alias] ?: getOrGenerate(alias).also { cached[alias] = it }
+
+    private fun getOrGenerate(alias: String): SecretKey {
         val keyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
         (keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
                 return generate(alias, strongBox = true)
-            } catch (_: StrongBoxUnavailableException) {
-                // No secure element on this device; fall through to the regular Keystore.
+            } catch (_: GeneralSecurityException) {
+                // StrongBox rejected the spec; fall through to the regular Keystore.
             } catch (_: ProviderException) {
-                // Some OEM StrongBox implementations throw a plain ProviderException instead.
+                // No secure element (StrongBoxUnavailableException) or an OEM StrongBox failure.
             }
         }
         return generate(alias, strongBox = false)

@@ -146,6 +146,8 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
   one-time migration on first open (warmed up on `Dispatchers.IO` by `AutoLockApp`) copies the
   old `autolock_secure` EncryptedSharedPreferences values in one `commit()` and deletes the old
   file and master key.
+  Decrypted values are cached in memory after warm-up (and the Keystore key handle is cached), so
+  reads don't hit StrongBox; a transient Keystore error is retried on the next read.
 - Network: `network_security_config.xml` forbids cleartext, trusts system CAs only. An OkHttp
   `CertPins` pinner is wired but empty (no-op) until real SPKI pins are supplied.
 - Login screen uses `FLAG_SECURE`. Ktor request logging stays off; never log credentials,
@@ -373,3 +375,4 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   (sign in again). New JVM tests `AesGcmSecretCipherTest`, `SecureStoreTest`,
   `SecureStoreMigrationTest`; instrumented `SecureStoreDeviceTest` (2 tests, passed on the API 37
   emulator). Follow-ups in 8: drop security-crypto after v0.3.0; fix `data_extraction_rules.xml`.
+  230 tests green, lint 0 errors.
