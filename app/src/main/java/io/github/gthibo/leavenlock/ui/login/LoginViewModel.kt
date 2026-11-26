@@ -9,10 +9,12 @@ import io.github.gthibo.leavenlock.data.settings.SettingsRepository
 import io.github.gthibo.leavenlock.domain.ActivityLog
 import io.github.gthibo.leavenlock.domain.LogEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface LoginState {
@@ -45,7 +47,7 @@ class LoginViewModel @Inject constructor(
      */
     fun onSignIn(email: String, password: String, pin: String) = viewModelScope.launch {
         _state.value = LoginState.InProgress
-        if (pin.isNotBlank()) secureStore.savePin(pin.trim())
+        if (pin.isNotBlank()) withContext(Dispatchers.IO) { secureStore.savePin(pin.trim()) }
         val s = settingsRepo.settings.first()
         when (val result = provider.client(s).loginWithPassword(email, password)) {
             is CommandResult.Success -> {

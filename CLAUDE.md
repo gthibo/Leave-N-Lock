@@ -31,7 +31,8 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   (`ui/theme/porcelain/`, see §6b). Dynamic colour is **off**; the user picks System default /
   Light / Dark. Fonts are bundled in `res/font/`. No XML layouts (except the widget).
 - DI: Hilt. Async: Coroutines + Flow. HTTP: Ktor (OkHttp engine) + kotlinx.serialization.
-- Storage: DataStore (settings), EncryptedSharedPreferences/Keystore (PIN + US sign-in).
+- Storage: DataStore (settings); `SecureStore` = plain prefs + AES-256-GCM under an Android
+  Keystore key (PIN + US sign-in).
 - Background: Foreground Service (`connectedDevice`) + BroadcastReceivers. WorkManager via Hilt.
 - Build: Gradle version catalog (`gradle/libs.versions.toml`), KSP (never kapt). AGP 9's
   built-in Kotlin compiles the app: `app/build.gradle.kts` does **not** apply
@@ -47,6 +48,9 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 ## 3. Package map (`app/src/main/java/io/github/gthibo/leavenlock`)
 - `data/settings/` — `AppSettings`, `SettingsRepository` (DataStore). All non-secret prefs.
 - `data/secure/` — `SecureStore`: BlueLink PIN + US email/password, encrypted. **Never log them.**
+  `SecretCipher` (AES-GCM, AAD = key name), `KeystoreKey` (Keystore alias `leavenlock_secure_v1`),
+  `LegacySecureStoreReader` + `LegacySecretSource` (one-time read of the old `autolock_secure`
+  file; the only security-crypto user).
 - `data/device/` — `BluetoothDevices` (bonded devices for the car picker).
 - `data/location/` — `LocationHelper` (last location + reverse-geocoded parked label).
 - `data/detection/` — `ActivityRecognitionManager`, `GeofenceManager`.
@@ -133,8 +137,17 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
 - Tests never touch the real BlueLink API; use `FakeBlueLinkClient` or Ktor `MockEngine`.
 
 ## 5b. Security model
-- `SecureStore`: EncryptedSharedPreferences (AES-256-GCM), Keystore master key, StrongBox when
-  available; corrupted store → wipe + re-sign-in, never plaintext. Not backed up.
+- `SecureStore`: values in a private prefs file `secure_v2`, each `"v1:" + Base64(iv ‖ AES-256-GCM
+  ciphertext)` with AAD = key name. Key: Keystore alias `leavenlock_secure_v1`, StrongBox when
+  available (falls back to TEE), no user-auth/unlocked-device requirement (auto-lock reads the
+  PIN with the phone locked). A value that can't be decrypted (bad tag, malformed, key
+  invalidated) is removed → re-sign-in, never plaintext; other Keystore errors return null but
+  keep the value; failed saves are warned (class name only), never thrown. Not backed up. A
+  one-time migration on first open (warmed up on `Dispatchers.IO` by `AutoLockApp`) copies the
+  old `autolock_secure` EncryptedSharedPreferences values in one `commit()` and deletes the old
+  file and master key.
+  Decrypted values are cached in memory after warm-up (and the Keystore key handle is cached), so
+  reads don't hit StrongBox; a transient Keystore error is retried on the next read.
 - Network: `network_security_config.xml` forbids cleartext, trusts system CAs only. An OkHttp
   `CertPins` pinner is wired but empty (no-op) until real SPKI pins are supplied.
 - Login screen uses `FLAG_SECURE`. Ktor request logging stays off; never log credentials,
@@ -223,10 +236,18 @@ cancel, widget Lock/Unlock…, start chime + lock sound, What's new. Dependabot 
 too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
 accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
 Not yet released: these changes are on `main` only (no v0.3.0 tag). No open PRs; `main` is the
-only branch. Next, in order: a replacement plan for `androidx.security:security-crypto`
-(deprecated upstream; `SecureStore` builds with warnings). Ideas not started yet, in priority
-order: US diagnostics export with redaction; Stats "Session expires" row; car-reported location.
-New work goes on its own branch cut from `main`.
+only branch except the one below. **The security-crypto replacement is done on branch
+`claude/secure-store-keystore`** (PR #22, CI green). **Car test 2026-11-26 (Pixel 11 Pro, in-place
+update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
+`autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
+/ sign-in, no unlock-dialog lag or "PIN needed" failures. Awaiting merge (see 5b, and 9 on 2026-11-26).
+Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
+expires" row; car-reported location. New work goes on its own branch cut from `main`.
+- Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
+  release after v0.3.0 (kept for v0.3.0 only so the migration can read old installs).
+- `res/xml/data_extraction_rules.xml` holds `<full-backup-content>` instead of
+  `<data-extraction-rules>`, so on Android 12+ device-to-device transfer isn't excluded. Fix it
+  (secrets wouldn't survive a restore anyway: the Keystore key doesn't transfer).
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only. In the 2026-11-06 car test the cached reads always confirmed first, so it hasn't run
@@ -345,3 +366,16 @@ New work goes on its own branch cut from `main`.
   4 → 6, Gradle wrapper 9.8.2 → 9.9.0, play-services-location 21.3.0 → 21.4.0,
   accompanist-permissions 0.36.0 → 0.37.3, turbine 1.2.0 → 1.2.1, mockk 1.13.13 → 1.14.12).
   #14 was brought up to date by merging `main` into it (no force-push). CI green on `72c9377`.
+- 2026-11-26 — Moved `SecureStore` off deprecated EncryptedSharedPreferences (branch
+  `claude/secure-store-keystore`; design
+  `docs/superpowers/specs/2026-11-26-secure-store-design.md`, plan
+  `docs/superpowers/plans/2026-11-26-secure-store-keystore.md`). New `secure_v2` prefs file,
+  AES-256-GCM with AAD = key name (`SecretCipher`/`AesGcmSecretCipher`), Keystore alias
+  `leavenlock_secure_v1` (`KeystoreKey`, StrongBox then TEE). One-time migration reads the old
+  `autolock_secure` file via `LegacySecureStoreReader`, writes all values + `migrated = 1` in one
+  `commit()`, never overwrites an existing `secure_v2` value, retries next launch on failure, then
+  deletes the old file and `_androidx_security_master_key_`; an unreadable old store starts empty
+  (sign in again). New JVM tests `AesGcmSecretCipherTest`, `SecureStoreTest`,
+  `SecureStoreMigrationTest`; instrumented `SecureStoreDeviceTest` (2 tests, passed on the API 37
+  emulator). Follow-ups in 8: drop security-crypto after v0.3.0; fix `data_extraction_rules.xml`.
+  230 tests green, lint 0 errors.
