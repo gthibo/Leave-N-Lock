@@ -52,7 +52,15 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   `LegacySecureStoreReader` + `LegacySecretSource` (one-time read of the old `autolock_secure`
   file; the only security-crypto user).
 - `data/device/` — `BluetoothDevices` (bonded devices for the car picker).
-- `data/location/` — `LocationHelper` (last location + reverse-geocoded parked label).
+- `data/location/` — `LocationHelper` (fresh, accurate fix + reverse-geocoded parked label),
+  pure `FixRules` / `FixQuality` (which fix to use: fresh ≤ `MAX_FIX_AGE_MS` 5 s, "good enough"
+  ≤ `GOOD_ACCURACY_METERS` 50 m, else the most accurate). Every read goes through
+  `accurateFix(gpsWaitMs)`: `CurrentLocationRequest` with `PRIORITY_HIGH_ACCURACY`, max update
+  age 5 s, duration = the GPS wait; if missing or > 50 m, one balanced-power request (5 s, same
+  max age), then `FixRules.best`. Never the plain `getCurrentLocation(priority, token)`: its
+  defaults accept a fix up to 60 s old (from while still driving). GPS waits: parked spot 20 s,
+  geofence centre at connect 5 s (`BluetoothStateReceiver`, under `goAsync()`), confirm-window
+  start 8 s (default), walk-away polls 3 s (`GEO_POLL_GPS_WAIT_MS`).
 - `data/detection/` — `ActivityRecognitionManager`, `GeofenceManager`.
 - `data/status/` — `StatusCache` (last full status; the single source for the Home card, widget
   and notification). Save command results with `saveStatus(…, fromCommand = true)`: for
@@ -88,6 +96,11 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 1. **Primary trigger:** car Bluetooth `ACL_DISCONNECTED` (user picks the paired device).
 2. **Confirmation (optional):** Activity Recognition (→ walking) and/or geofence distance polling
    during the confirm window. `requireWalkAwayConfirmation` makes them mandatory.
+   **Parked spot** (`rememberParkedLocation`): at the start of a run the controller launches
+   `rememberParkedSpot()` beside the evaluation (`parkedJob`, so a ~20 s GPS wait never delays
+   the lock); `cancel()` cancels it (a reconnect means it wasn't a parking spot). It logs a WARN
+   if only approximate location is granted. Readers: Home card + Open in Maps (lat/lng, label as
+   pin name) and the departure notification (label). The widget doesn't show it.
 3. State flow: `IDLE → (ARMED) → CONFIRMING → GRACE → VERIFYING → (AWAITING_CONFIRM) → LOCKING →
    LOCKED / SKIPPED / NOT_LOCKED_OPEN / SENT_UNVERIFIED / ERROR`; reconnect or cancel → `ABORTED` (a car Bluetooth reconnect mid-run logs "Car Bluetooth reconnected —
    auto-lock cancelled." via `cancel(reason)`). When adding a
@@ -244,6 +257,11 @@ replacement is merged** (PR #22, squash 857b1e3). **Car test 2026-11-26 (Pixel 1
 update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
 / sign-in, no unlock-dialog lag or "PIN needed" failures (see 5b, and 9 on 2026-11-26).
+**Parked-spot accuracy fix** (`claude/parked-location-accuracy`, PR open): the 2026-11-26 car
+test showed the spot several blocks off (balanced-power fix up to 60 s old). Needs the
+maintainer's car test before merge. Overlaps open PR #21 (`claude/parked-location-background`)
+in `AutoLockController`'s parked block: whichever merges second merges `main` in and moves #21's
+"clear the old spot + WARN when no fix" branch into `rememberParkedSpot()`.
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
@@ -387,3 +405,11 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   reason on failure, WARN for rate limit / not signed in / session expired / wrong PIN / no
   vehicle, INFO for dry run); never the PIN. No sound for in-app commands. `manualLock` /
   `manualUnlock` share one `runManual`; on-screen messages unchanged. `ManualCommandLogTest`; 234 tests green, lint 0 errors.
+- 2026-11-26 — Parked spot several blocks off (car test, Pixel 11 Pro): `LocationHelper` asked
+  for `PRIORITY_BALANCED_POWER_ACCURACY` (Wi-Fi/cell, ~100 m+) through
+  `getCurrentLocation(priority, null)`, whose defaults accept a cached fix up to 60 s old. Now
+  every read (parked spot, geofence centre, walk-away polls) uses `accurateFix`: high accuracy
+  with max age 5 s and a bounded wait, then a fresh balanced fallback, chosen by pure `FixRules`
+  (`FixRulesTest`, 9 tests). The parked capture runs beside the evaluation (`parkedJob`, cancelled
+  on reconnect) and warns when only approximate location is granted. 5 new controller tests;
+  geofence mocks now match `currentLocation(any())`. 248 tests green.

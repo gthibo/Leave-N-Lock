@@ -57,6 +57,7 @@ class AutoLockController @Inject constructor(
 
     private var machine: LockStateMachine? = null
     private var runJob: Job? = null
+    private var parkedJob: Job? = null
 
     @Volatile private var skipGrace = false
     // Set when a walk-away signal (Activity Recognition or geofence) confirms you left the car.
@@ -91,9 +92,32 @@ class AutoLockController @Inject constructor(
     fun cancel(reason: String? = null) {
         val wasRunning = runJob?.isActive == true
         runJob?.cancel()
+        // Car Bluetooth reconnected (or the user cancelled): this wasn't a parking spot.
+        parkedJob?.cancel()
         if (wasRunning && reason != null) log.add(LogLevel.INFO, "$reason — auto-lock cancelled.")
         machine?.let { advance(it.next(_state.value.detection, DetectionEvent.UserCancelled)) }
         _state.value = _state.value.copy(detection = DetectionState.ABORTED, graceRemaining = 0)
+    }
+
+    /** Saves where the car parked (phone location at car Bluetooth disconnect). Never throws. */
+    private suspend fun rememberParkedSpot() {
+        try {
+            if (!locationHelper.hasPreciseLocation()) {
+                log.add(
+                    LogLevel.WARN,
+                    "Location is set to approximate, so the parked spot may be far off. " +
+                        "Turn on \"Use precise location\" for LEAVE/LOCK.",
+                )
+            }
+            locationHelper.currentParkedPlace()?.let { place ->
+                settingsRepo.update { it.copy(parkedLabel = place.label, parkedLat = place.lat, parkedLng = place.lng) }
+                place.label?.let { log.add(LogLevel.INFO, "Parked near $it.") }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.add(LogLevel.WARN, "Couldn't save the parked spot (${e.javaClass.simpleName}).")
+        }
     }
 
     /** Manual "run now" for testing from the UI. */
@@ -118,12 +142,11 @@ class AutoLockController @Inject constructor(
             log.add(LogLevel.INFO, "Outside active hours — not locking.")
             return
         }
-        // Optionally remember where the car parked.
+        // Optionally remember where the car parked. Runs beside the evaluation: it can wait up to
+        // ~20 s for a GPS fix, which must not hold up the confirm window or the lock.
         if (settings.rememberParkedLocation) {
-            locationHelper.currentParkedPlace()?.let { place ->
-                settingsRepo.update { it.copy(parkedLabel = place.label, parkedLat = place.lat, parkedLng = place.lng) }
-                place.label?.let { log.add(LogLevel.INFO, "Parked near $it.") }
-            }
+            parkedJob?.cancel()
+            parkedJob = scope.launch { rememberParkedSpot() }
         }
         val sm = LockStateMachine(settings).also { machine = it }
         advance(sm.next(DetectionState.IDLE, DetectionEvent.CarBluetoothDisconnected))
@@ -150,7 +173,7 @@ class AutoLockController @Inject constructor(
             }
             if (geoStart != null && clock() - lastGeoCheckMs > GEO_POLL_MS) {
                 lastGeoCheckMs = clock()
-                val here = locationHelper.currentLocation()
+                val here = locationHelper.currentLocation(gpsWaitMs = GEO_POLL_GPS_WAIT_MS)
                 if (here != null && geoStart.distanceTo(here) >= settings.geofenceRadiusMeters) {
                     log.add(LogLevel.INFO, "Moved beyond the geofence — confirmed you left.")
                     walkAwayConfirmed = true
@@ -569,6 +592,8 @@ class AutoLockController @Inject constructor(
         const val CONFIRM_TIMEOUT_MS = 20_000L
         const val CONFIRM_LOCK_TIMEOUT_MS = 120_000L
         const val GEO_POLL_MS = 3_000L
+        /** GPS wait per walk-away poll (the first poll warms GPS up; later ones are quick). */
+        const val GEO_POLL_GPS_WAIT_MS = 3_000L
         const val STATUS_READ_ATTEMPTS = 3
         const val STATUS_READ_TIMEOUT_MS = 15_000L
         const val VERIFY_ATTEMPTS = 3
