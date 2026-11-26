@@ -2,78 +2,87 @@ package io.github.gthibo.leavenlock.data.secure
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Encrypted storage backed by the Android Keystore. Holds the BlueLink PIN and sign-in.
+ * Storage for the BlueLink PIN and US sign-in. Each value is an AES-GCM blob (key in the Android
+ * Keystore) in a plain prefs file, with the pref key as AAD. Never logs values.
  */
 @Singleton
-class SecureStore @Inject constructor(
-    @ApplicationContext private val context: Context,
+class SecureStore internal constructor(
+    prefs: () -> SharedPreferences,
+    private val cipher: SecretCipher,
+    private val legacy: LegacySecretSource,
+    private val warn: (String) -> Unit,
 ) {
-    private val prefs: SharedPreferences by lazy { openPrefs() }
+    @Inject
+    constructor(@ApplicationContext context: Context) : this(
+        prefs = { context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE) },
+        cipher = AesGcmSecretCipher { KeystoreKey.getOrCreate() },
+        legacy = NoLegacySecrets,
+        warn = { Log.w("SecureStore", it) },
+    )
 
-    private fun buildMasterKey(): MasterKey {
-        val builder = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        // Prefer hardware-backed StrongBox when the device has a secure element.
-        return runCatching {
-            builder.setRequestStrongBoxBacked(true).build()
-        }.getOrElse {
-            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
+    private val prefs: SharedPreferences by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { open(prefs) }
+
+    private fun open(source: () -> SharedPreferences): SharedPreferences {
+        val opened = source()
+        if (!opened.contains(KEY_MIGRATED) && !legacy.exists()) {
+            opened.edit().putInt(KEY_MIGRATED, 1).commit()
         }
+        return opened
     }
 
-    private fun createEncryptedPrefs(): SharedPreferences =
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_FILE,
-            buildMasterKey(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-
-    /**
-     * Opens the encrypted store. If the keystore entry or file is corrupted (e.g. after a
-     * restore or key rotation), we wipe and recreate rather than crash — the user simply
-     * re-authenticates. No plaintext fallback is ever used.
-     */
-    private fun openPrefs(): SharedPreferences = try {
-        createEncryptedPrefs()
-    } catch (_: Exception) {
-        context.deleteSharedPreferences(PREFS_FILE)
-        runCatching { File(context.filesDir.parent, "shared_prefs/$PREFS_FILE.xml").delete() }
-        createEncryptedPrefs()
+    /** Opens the store now, off the hot path. */
+    fun warmUp() {
+        prefs
     }
 
     /** BlueLink service PIN, sent with every remote lock/unlock command. */
-    fun savePin(pin: String) = prefs.edit().putString(KEY_PIN, pin).apply()
-    fun loadPin(): String? = prefs.getString(KEY_PIN, null)
+    fun savePin(pin: String) = save(KEY_PIN to pin)
+    fun loadPin(): String? = load(KEY_PIN)
 
     /**
-     * US BlueLink email + password (encrypted). Hyundai US tokens last ~30 min and refreshing
-     * them requires the password, so background auto-lock can't stay signed in without it.
-     * Cleared on US sign-out or a failed US sign-in. Never logged, never backed up.
+     * US BlueLink email + password. Hyundai US tokens last ~30 min and refreshing them requires the
+     * password, so background auto-lock can't stay signed in without it. Cleared on US sign-out or a
+     * failed US sign-in. Never logged, never backed up.
      */
-    fun saveUsCredentials(username: String, password: String) = prefs.edit()
-        .putString(KEY_US_USERNAME, username)
-        .putString(KEY_US_PASSWORD, password)
-        .apply()
-    fun loadUsUsername(): String? = prefs.getString(KEY_US_USERNAME, null)
-    fun loadUsPassword(): String? = prefs.getString(KEY_US_PASSWORD, null)
-    fun clearUsCredentials() = prefs.edit().remove(KEY_US_USERNAME).remove(KEY_US_PASSWORD).apply()
+    fun saveUsCredentials(username: String, password: String) =
+        save(KEY_US_USERNAME to username, KEY_US_PASSWORD to password)
+    fun loadUsUsername(): String? = load(KEY_US_USERNAME)
+    fun loadUsPassword(): String? = load(KEY_US_PASSWORD)
+    fun clearUsCredentials() {
+        prefs.edit().remove(KEY_US_USERNAME).remove(KEY_US_PASSWORD).commit()
+    }
 
+    /** Removes the secrets; keeps the migration marker so old data is never resurrected. */
     fun clear() {
-        prefs.edit().clear().apply()
+        prefs.edit().remove(KEY_PIN).remove(KEY_US_USERNAME).remove(KEY_US_PASSWORD).commit()
+    }
+
+    private fun save(vararg entries: Pair<String, String>) {
+        val editor = prefs.edit()
+        entries.forEach { (key, value) -> editor.putString(key, cipher.encrypt(value, key)) }
+        editor.commit()
+    }
+
+    private fun load(key: String): String? {
+        val blob = prefs.getString(key, null) ?: return null
+        return try {
+            cipher.decrypt(blob, key)
+        } catch (e: Exception) {
+            warn("Secure value unreadable: ${e.javaClass.simpleName}")
+            prefs.edit().remove(key).commit()
+            null
+        }
     }
 
     private companion object {
-        const val PREFS_FILE = "autolock_secure"
+        const val PREFS_FILE = "secure_v2"
+        const val KEY_MIGRATED = "migrated"
         const val KEY_PIN = "service_pin"
         const val KEY_US_USERNAME = "us_username"
         const val KEY_US_PASSWORD = "us_password"
