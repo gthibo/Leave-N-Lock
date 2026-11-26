@@ -72,8 +72,11 @@ class SecureStore internal constructor(
             }
             return
         }
+        // Without a marker, a value already in the target was saved after a failed migration,
+        // so it is newer than the old store's: never overwrite it.
         val encrypted = listOf(KEY_PIN to old.pin, KEY_US_USERNAME to old.usUsername,
             KEY_US_PASSWORD to old.usPassword)
+            .filter { (key, _) -> !target.contains(key) }
             .mapNotNull { (key, value) -> value?.let { key to cipher.encrypt(it, key) } }
         val editor = target.edit()
         encrypted.forEach { (key, blob) -> editor.putString(key, blob) }

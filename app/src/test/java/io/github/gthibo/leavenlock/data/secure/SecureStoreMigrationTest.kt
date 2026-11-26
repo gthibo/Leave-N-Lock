@@ -114,6 +114,23 @@ class SecureStoreMigrationTest {
     }
 
     @Test
+    fun saveAfterFailedMigrationIsNotOverwrittenOnRetry() {
+        val legacy = FakeLegacy(LegacySecrets("1234", "me@x.com", "hunter2"))
+        fake.failCommits = true
+        val first = store(legacy)
+        assertNull(first.loadPin())
+        fake.failCommits = false
+        first.savePin("9999")
+
+        val second = store(legacy)
+        assertEquals("9999", second.loadPin())
+        assertEquals("me@x.com", second.loadUsUsername())
+        assertEquals("hunter2", second.loadUsPassword())
+        assertEquals(1, legacy.deletes)
+        assertEquals(1, marker)
+    }
+
+    @Test
     fun cipherFailureKeepsOldFile() {
         val legacy = FakeLegacy(LegacySecrets("1234", "me@x.com", "hunter2"))
         val s = store(legacy, AesGcmSecretCipher { throw ProviderException("keystore down") })
