@@ -1,5 +1,6 @@
 package io.github.gthibo.leavenlock.data.secure
 
+import java.security.ProviderException
 import javax.crypto.KeyGenerator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,5 +73,63 @@ class SecureStoreTest {
         assertNull(store.loadPin())
         assertNull(store.loadUsUsername())
         assertNull(store.loadUsPassword())
+    }
+
+    private fun storeWith(
+        cipher: SecretCipher,
+        warnings: MutableList<String> = mutableListOf(),
+        primeKey: () -> Unit = {},
+    ) = SecureStore({ fake }, cipher, NoLegacySecrets, { warnings += it }, primeKey)
+
+    private val throwingCipher = AesGcmSecretCipher { throw ProviderException("keystore down") }
+
+    @Test
+    fun keystoreErrorOnDecryptKeepsValue() {
+        store.savePin("1234")
+        val warnings = mutableListOf<String>()
+        val broken = storeWith(throwingCipher, warnings)
+        assertNull(broken.loadPin())
+        assertTrue(fake.contains("service_pin"))
+        assertEquals(listOf("Secure value unreadable: ProviderException"), warnings)
+        assertEquals("1234", store.loadPin())
+    }
+
+    @Test
+    fun commitFailureWarnsAndStoresNothing() {
+        val warnings = mutableListOf<String>()
+        val s = storeWith(AesGcmSecretCipher { key }, warnings)
+        s.loadPin() // open while commits still work
+        fake.failCommits = true
+        s.savePin("1234")
+        assertEquals(listOf("Secure value not saved: commit failed"), warnings)
+        assertFalse(fake.contains("service_pin"))
+    }
+
+    @Test
+    fun encryptFailureWarnsAndStoresNothing() {
+        val warnings = mutableListOf<String>()
+        val s = storeWith(throwingCipher, warnings)
+        s.saveUsCredentials("me@x.com", "hunter2")
+        assertEquals(listOf("Secure value not saved: ProviderException"), warnings)
+        assertFalse(fake.contains("us_username"))
+        assertFalse(fake.contains("us_password"))
+    }
+
+    @Test
+    fun warmUpPrimesKeyOnce() {
+        var calls = 0
+        val s = storeWith(AesGcmSecretCipher { key }) { calls++ }
+        s.warmUp()
+        s.warmUp()
+        s.loadPin()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun throwingPrimerIsWarnedNotThrown() {
+        val warnings = mutableListOf<String>()
+        val s = storeWith(AesGcmSecretCipher { key }, warnings) { throw ProviderException("x") }
+        s.warmUp()
+        assertEquals(listOf("Keystore key unavailable: ProviderException"), warnings)
     }
 }

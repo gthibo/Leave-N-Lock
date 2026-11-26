@@ -2,9 +2,11 @@ package io.github.gthibo.leavenlock.data.secure
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.crypto.AEADBadTagException
 import javax.inject.Singleton
 
 /**
@@ -17,6 +19,7 @@ class SecureStore internal constructor(
     private val cipher: SecretCipher,
     private val legacy: LegacySecretSource,
     private val warn: (String) -> Unit,
+    private val primeKey: () -> Unit = {},
 ) {
     @Inject
     constructor(@ApplicationContext context: Context) : this(
@@ -24,19 +27,25 @@ class SecureStore internal constructor(
         cipher = AesGcmSecretCipher { KeystoreKey.getOrCreate() },
         legacy = NoLegacySecrets,
         warn = { Log.w("SecureStore", it) },
+        primeKey = { KeystoreKey.getOrCreate() },
     )
 
     private val prefs: SharedPreferences by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { open(prefs) }
 
     private fun open(source: () -> SharedPreferences): SharedPreferences {
         val opened = source()
+        try {
+            primeKey()
+        } catch (e: Exception) {
+            warn("Keystore key unavailable: ${e.javaClass.simpleName}")
+        }
         if (!opened.contains(KEY_MIGRATED) && !legacy.exists()) {
             opened.edit().putInt(KEY_MIGRATED, 1).commit()
         }
         return opened
     }
 
-    /** Opens the store now, off the hot path. */
+    /** Opens the store and primes the Keystore key now, so callers can do it off the main thread. */
     fun warmUp() {
         prefs
     }
@@ -64,9 +73,14 @@ class SecureStore internal constructor(
     }
 
     private fun save(vararg entries: Pair<String, String>) {
-        val editor = prefs.edit()
-        entries.forEach { (key, value) -> editor.putString(key, cipher.encrypt(value, key)) }
-        editor.commit()
+        try {
+            val encrypted = entries.map { (key, value) -> key to cipher.encrypt(value, key) }
+            val editor = prefs.edit()
+            encrypted.forEach { (key, blob) -> editor.putString(key, blob) }
+            if (!editor.commit()) warn("Secure value not saved: commit failed")
+        } catch (e: Exception) {
+            warn("Secure value not saved: ${e.javaClass.simpleName}")
+        }
     }
 
     private fun load(key: String): String? {
@@ -75,7 +89,13 @@ class SecureStore internal constructor(
             cipher.decrypt(blob, key)
         } catch (e: Exception) {
             warn("Secure value unreadable: ${e.javaClass.simpleName}")
-            prefs.edit().remove(key).commit()
+            // Only drop the value when the blob itself is provably bad; a transient Keystore
+            // error must not destroy a secret that may still decrypt later.
+            if (e is AEADBadTagException || e is IllegalArgumentException ||
+                e is KeyPermanentlyInvalidatedException
+            ) {
+                prefs.edit().remove(key).commit()
+            }
             null
         }
     }
