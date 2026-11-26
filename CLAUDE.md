@@ -258,8 +258,9 @@ update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` hold
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
 / sign-in, no unlock-dialog lag or "PIN needed" failures (see 5b, and 9 on 2026-11-26).
 **Parked-spot accuracy fix** (`claude/parked-location-accuracy`, PR open): the 2026-11-26 car
-test showed the spot several blocks off (balanced-power fix up to 60 s old). Needs the
-maintainer's car test before merge. Overlaps open PR #21 (`claude/parked-location-background`)
+test showed the spot several blocks off (balanced-power fix up to 60 s old). **Car test
+2026-11-26 (Pixel 11 Pro, debug build of 1f97ef3): passed** — parked spot and Open in Maps
+correct, garage fallback, geofence walk-away, reconnect cancel. CI green. Overlaps open PR #21 (`claude/parked-location-background`)
 in `AutoLockController`'s parked block: whichever merges second merges `main` in and moves #21's
 "clear the old spot + WARN when no fix" branch into `rememberParkedSpot()`.
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
