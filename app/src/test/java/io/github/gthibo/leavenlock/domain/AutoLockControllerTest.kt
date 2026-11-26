@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -1072,6 +1073,35 @@ class AutoLockControllerTest {
     }
 
     @Test
+    fun parkedLocationUnavailableLogsAndClearsTheOldSpot() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(
+            rememberParkedLocation = true,
+            parkedLabel = "Home St",
+            parkedLat = 1.0,
+            parkedLng = 2.0,
+        )
+        // Background location missing: the fused provider gives nothing.
+        coEvery { f.locationHelper.currentParkedPlace() } returns null
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        // The old spot is wrong now, so it must not stay on the status card.
+        assertNull(f.settings.value.parkedLabel)
+        assertNull(f.settings.value.parkedLat)
+        assertNull(f.settings.value.parkedLng)
+        assertTrue(
+            f.log.entries.value.any {
+                it.level == LogLevel.WARN && it.message.contains("Couldn't get your location")
+            }
+        )
+        // A missing location must not change the lock flow itself.
+        assertEquals(DetectionState.GRACE, f.controller.state.value.detection)
+    }
+
+    @Test
     fun parkedLocationIsNotReadWhenRememberDisabled() = runTest {
         val f = Fixture(backgroundScope)
         f.settings.value = f.settings.value.copy(
@@ -1492,13 +1522,99 @@ class AutoLockControllerTest {
 
         assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
         assertEquals(0, f.controller.state.value.graceRemaining)
-        coVerify(exactly = 0) { f.client.status(any(), any()) }
+        // The skip refreshes the card from Hyundai's cache only; it never wakes the car.
+        coVerify(exactly = 0) { f.client.status(any(), true) }
         coVerify(exactly = 0) { f.client.lock(any()) }
         assertTrue(
             f.log.entries.value.any {
                 it.message.contains("No walk-away confirmation within the window — not locking.")
             }
         )
+    }
+
+    @Test
+    fun walkingDuringTheConfirmWindowIsLoggedOnce() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(
+            useActivityRecognition = true,
+            requireWalkAwayConfirmation = true,
+        )
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+        assertEquals(DetectionState.CONFIRMING, f.controller.state.value.detection)
+
+        f.controller.onWalkingConfirmed()
+        f.controller.onWalkingConfirmed() // Activity Recognition can report the same walk twice.
+        runCurrent()
+
+        assertEquals(1, f.log.entries.value.count { it.message == "Walking detected — confirmed you left." })
+    }
+
+    @Test
+    fun walkingWithNoRunInProgressLogsNothing() = runTest {
+        val f = Fixture(backgroundScope)
+
+        f.controller.onWalkingConfirmed()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.none { it.message.startsWith("Walking detected") })
+    }
+
+    /** Runs a walk-away run with no confirmation until the 20 s window runs out (skip). */
+    private fun TestScope.skipForNoWalkAway(f: Fixture) {
+        var testTime = 1_000_000L
+        f.controller.clock = { testTime }
+        f.settings.value = f.settings.value.copy(
+            useActivityRecognition = true,
+            requireWalkAwayConfirmation = true,
+        )
+        f.controller.onTriggerFired()
+        runCurrent()
+        testTime += 20_001L
+        advanceTimeBy(250)
+        runCurrent()
+    }
+
+    @Test
+    fun walkAwaySkipRefreshesTheCachedStatus() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        skipForNoWalkAway(f)
+
+        assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
+        // One cached read, saved as a plain read, so Home / widget show the car as it is now.
+        coVerify(exactly = 1) { f.client.status("test-vehicle", false) }
+        coVerify(exactly = 1) { f.cache.saveStatus(match { it.lockState == LockState.UNLOCKED }, any(), false) }
+        coVerify(exactly = 0) { f.client.lock(any()) }
+    }
+
+    @Test
+    fun walkAwaySkipStatusFailureStaysQuiet() = runTest {
+        val f = Fixture(backgroundScope)
+        coEvery { f.client.status(any(), any()) } throws IllegalStateException("no signal")
+
+        skipForNoWalkAway(f)
+
+        assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
+        coVerify(exactly = 0) { f.cache.saveStatus(any(), any(), any()) }
+        // Best effort only: no "Could not read vehicle status" failure for a run that wasn't locking.
+        assertTrue(f.log.entries.value.none { it.message.contains("Could not read vehicle status") })
+    }
+
+    @Test
+    fun geofenceWithoutALocationLogsAWarning() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(useGeofence = true)
+        coEvery { f.locationHelper.currentLocation(any()) } returns null
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        assertTrue(f.log.entries.value.any { it.message.contains("Geofence check skipped") })
     }
 
     @Test
@@ -1557,7 +1673,8 @@ class AutoLockControllerTest {
         assertEquals(DetectionState.SKIPPED, f.controller.state.value.detection)
         // Only the one starting-point read; with no starting point there is nothing to poll.
         coVerify(exactly = 1) { f.locationHelper.currentLocation(any()) }
-        coVerify(exactly = 0) { f.client.status(any(), any()) }
+        // Only the cached card refresh after the skip; never a live read.
+        coVerify(exactly = 0) { f.client.status(any(), true) }
         coVerify(exactly = 0) { f.client.lock(any()) }
     }
 

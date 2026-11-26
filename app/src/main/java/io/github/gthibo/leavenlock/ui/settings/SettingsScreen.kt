@@ -1,9 +1,11 @@
 package io.github.gthibo.leavenlock.ui.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.data.settings.NotificationField
 import io.github.gthibo.leavenlock.data.settings.RunMode
@@ -50,7 +55,7 @@ import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -63,6 +68,16 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val extras by viewModel.extras.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // Background location ("Allow all the time"): the parked-spot save and the geofence check run
+    // when the car's Bluetooth drops, with the app in the background. Before Android 10 the
+    // foreground location grant covers that.
+    val backgroundLocation = rememberPermissionState(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    val hasBackgroundLocation =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || backgroundLocation.status.isGranted
+    val requestBackgroundLocation: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) backgroundLocation.launchPermissionRequest()
+    }
 
     // Ringtone/sound picker for the custom lock sound.
     val soundPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -219,8 +234,14 @@ fun SettingsScreen(
                     stringResource(R.string.set_det_geo_title),
                     stringResource(R.string.set_det_geo_sub),
                     settings.useGeofence,
-                    viewModel::setUseGeofence,
+                    { on ->
+                        viewModel.setUseGeofence(on)
+                        if (on && !hasBackgroundLocation) requestBackgroundLocation()
+                    },
                 )
+                if (settings.useGeofence && !hasBackgroundLocation) {
+                    BackgroundLocationNotice(requestBackgroundLocation, { openAppInfo(context) })
+                }
                 if (settings.useGeofence) {
                     PgSlider(
                         label = stringResource(R.string.set_geo_radius, settings.geofenceRadiusMeters),
@@ -373,8 +394,14 @@ fun SettingsScreen(
                     stringResource(R.string.set_remember_title),
                     stringResource(R.string.set_remember_sub),
                     settings.rememberParkedLocation,
-                    viewModel::setRememberParkedLocation,
+                    { on ->
+                        viewModel.setRememberParkedLocation(on)
+                        if (on && !hasBackgroundLocation) requestBackgroundLocation()
+                    },
                 )
+                if (settings.rememberParkedLocation && !hasBackgroundLocation) {
+                    BackgroundLocationNotice(requestBackgroundLocation, { openAppInfo(context) })
+                }
             }
 
             // Active-hours schedule.
@@ -551,6 +578,23 @@ private fun openAppInfo(context: Context) {
                 Uri.fromParts("package", context.packageName, null),
             ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
+    }
+}
+
+/**
+ * Shown under a location feature that's on while background location is missing: without
+ * "Allow all the time", Android gives no location when the car's Bluetooth drops.
+ * "App info" is the way out if Android stops showing the request after repeated denials.
+ */
+@Composable
+private fun BackgroundLocationNotice(onAllow: () -> Unit, onAppInfo: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+        Text(stringResource(R.string.set_bg_location_needed), style = PorcelainText.bodySm, color = Porcelain.colors.danger)
+        // Stacked, full width: side by side, "Allow all the time" wrapped onto two cramped lines.
+        Column(verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
+            PgButton(stringResource(R.string.set_bg_location_allow), onAllow, Modifier.fillMaxWidth(), ButtonVariant.Tonal)
+            PgButton(stringResource(R.string.set_app_info), onAppInfo, Modifier.fillMaxWidth(), ButtonVariant.Secondary)
+        }
     }
 }
 

@@ -61,6 +61,10 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
   defaults accept a fix up to 60 s old (from while still driving). GPS waits: parked spot 20 s,
   geofence centre at connect 5 s (`BluetoothStateReceiver`, under `goAsync()`), confirm-window
   start 8 s (default), walk-away polls 3 s (`GEO_POLL_GPS_WAIT_MS`).
+  It runs from the background (Bluetooth trigger), so it needs `ACCESS_BACKGROUND_LOCATION`; the
+  service's `connectedDevice` type grants no location. Settings asks for it when "Remember parked
+  location" or "Geofence confirmation" is turned on (`BackgroundLocationNotice`). The geocode is
+  bounded (`GEOCODE_TIMEOUT_MS`) and handles `GeocodeListener.onError`, so it can't stall a run.
 - `data/detection/` — `ActivityRecognitionManager`, `GeofenceManager`.
 - `data/status/` — `StatusCache` (last full status; the single source for the Home card, widget
   and notification). Save command results with `saveStatus(…, fromCommand = true)`: for
@@ -101,6 +105,12 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
    the lock); `cancel()` cancels it (a reconnect means it wasn't a parking spot). It logs a WARN
    if only approximate location is granted. Readers: Home card + Open in Maps (lat/lng, label as
    pin name) and the departure notification (label). The widget doesn't show it.
+   The log says what confirmed a run: "Walking detected — confirmed you left." (Activity
+   Recognition, once per run, only while CONFIRMING) or "Moved beyond the geofence — confirmed you
+   left.". If the geofence is on but has no starting fix, a WARN says so. A skip for "no walk-away
+   confirmation" calls `refreshStatusAfterSkip()`: one cached `status(forceRefresh = false)` read
+   saved to `StatusCache` (best effort, silent on failure, never a live read), so Home / widget /
+   notification don't keep the previous run's lock state.
 3. State flow: `IDLE → (ARMED) → CONFIRMING → GRACE → VERIFYING → (AWAITING_CONFIRM) → LOCKING →
    LOCKED / SKIPPED / NOT_LOCKED_OPEN / SENT_UNVERIFIED / ERROR`; reconnect or cancel → `ABORTED` (a car Bluetooth reconnect mid-run logs "Car Bluetooth reconnected —
    auto-lock cancelled." via `cancel(reason)`). When adding a
@@ -257,12 +267,16 @@ replacement is merged** (PR #22, squash 857b1e3). **Car test 2026-11-26 (Pixel 1
 update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
 / sign-in, no unlock-dialog lag or "PIN needed" failures (see 5b, and 9 on 2026-11-26).
-**Parked-spot accuracy fix** (`claude/parked-location-accuracy`, PR open): the 2026-11-26 car
-test showed the spot several blocks off (balanced-power fix up to 60 s old). **Car test
-2026-11-26 (Pixel 11 Pro, debug build of 1f97ef3): passed** — parked spot and Open in Maps
-correct, garage fallback, geofence walk-away, reconnect cancel. CI green. Overlaps open PR #21 (`claude/parked-location-background`)
-in `AutoLockController`'s parked block: whichever merges second merges `main` in and moves #21's
-"clear the old spot + WARN when no fix" branch into `rememberParkedSpot()`.
+**Parked-spot accuracy fix is merged** (PR #24, squash be17dd1): the 2026-11-26 car test had
+shown the spot several blocks off (balanced-power fix up to 60 s old). **Car test 2026-11-26
+(Pixel 11 Pro, debug build of 1f97ef3): passed** — parked spot and Open in Maps correct, garage
+fallback, geofence walk-away, reconnect cancel. **PR #21** (`claude/parked-location-background`,
+background-location request + geocode `onError`/timeout) has `main` merged in, with its
+"clear the old spot + WARN when no fix" branch moved into `rememberParkedSpot()`. Partly
+car-tested 2026-11-26 ("Allow all the time" notice passed; feedback fixed: status refresh after a
+walk-away skip, geofence no-location WARN, stacked notice buttons, "Walking detected" log line).
+**Merged before its full car test at the maintainer's call; still to check:** walk-away lock log
+line, Home card after a no-confirmation skip, parked spot after a real drive.
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
@@ -414,3 +428,15 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   (`FixRulesTest`, 9 tests). The parked capture runs beside the evaluation (`parkedJob`, cancelled
   on reconnect) and warns when only approximate location is granted. 5 new controller tests;
   geofence mocks now match `currentLocation(any())`. 248 tests green.
+- 2026-11-26 — Parked location fix (`claude/parked-location-background`): the spot was only saved
+  while the app was open, since `ACCESS_BACKGROUND_LOCATION` was declared but never requested.
+  Settings now requests it when "Remember parked location" or "Geofence confirmation" is turned
+  on and shows a notice with "Allow all the time" / "App info" while it's missing. No location →
+  WARN log line and the old spot is cleared. `reverseGeocode` handles `onError` (a lambda left it
+  waiting forever) and times out after 10 s. 1 new test. Merged `main` in
+  after #24: the no-location branch now lives in `AutoLockController.rememberParkedSpot()`.
+  Car test feedback: the walk-away skip now refreshes the cached status (`refreshStatusAfterSkip`;
+  two tests that asserted "no status read on skip" now assert "no live read"); WARN when the
+  geofence has no starting fix; the notice's buttons are stacked full width ("Allow all the time"
+  wrapped when side by side). 3 new tests, 252 green. Then an INFO line when walking confirms a
+  run (a lock with background location off had no visible reason); 2 tests, 254 green.

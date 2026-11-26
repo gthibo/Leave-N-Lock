@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't
+  confirm you walked away, the Home card, widget and notification kept showing the car's
+  previous state (for example "Locked" when it was really unlocked). It now reads the car's
+  latest reported status in that case too, without waking the car. If the geofence can't get
+  your location, the activity log now says so, and when walking confirms you left, the log says
+  "Walking detected — confirmed you left."
 - **The parked spot is more accurate.** "Parked near" and Open in Maps could be a few blocks
   off, because the app asked for a quick, low-power location (Wi-Fi and cell towers) and would
   take one up to a minute old, from while you were still driving in. It now asks for a GPS fix
@@ -26,6 +32,13 @@
   Do Not Disturb, and you can change or mute each one under Android's notification settings for
   LEAVE/LOCK ("Auto-lock start sound", "Lock sound"). Notifications need to be allowed for the
   sounds to play. Your custom lock sound still works.
+- **"Remember parked location" works after you leave the car.** It only saved the spot when the
+  app happened to be open, because LEAVE/LOCK never asked for location "Allow all the time".
+  Turning on "Remember parked location" or "Geofence confirmation" now asks for it, and Settings
+  shows a notice with an "Allow all the time" button while it's missing. If the location still
+  can't be read, the activity log says so and the old spot is cleared instead of staying on the
+  status card. A failed street-name lookup (for example with no signal) can no longer hold up an
+  auto-lock.
 
 ## [0.2.0] - 2026-11-06
 

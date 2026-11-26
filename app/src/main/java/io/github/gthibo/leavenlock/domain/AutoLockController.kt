@@ -76,6 +76,10 @@ class AutoLockController @Inject constructor(
     }
 
     fun onWalkingConfirmed() = scope.launch {
+        // Say why a run went ahead (the geofence logs its own line); once per run, only mid-run.
+        if (_state.value.detection == DetectionState.CONFIRMING && !walkAwayConfirmed) {
+            log.add(LogLevel.INFO, "Walking detected — confirmed you left.")
+        }
         walkAwayConfirmed = true
         machine?.let { advance(it.next(_state.value.detection, DetectionEvent.WalkingConfirmed)) }
     }
@@ -109,9 +113,19 @@ class AutoLockController @Inject constructor(
                         "Turn on \"Use precise location\" for LEAVE/LOCK.",
                 )
             }
-            locationHelper.currentParkedPlace()?.let { place ->
+            val place = locationHelper.currentParkedPlace()
+            if (place != null) {
                 settingsRepo.update { it.copy(parkedLabel = place.label, parkedLat = place.lat, parkedLng = place.lng) }
                 place.label?.let { log.add(LogLevel.INFO, "Parked near $it.") }
+            } else {
+                // Usually background location ("Allow all the time") is missing. Clear the old
+                // spot so the status card doesn't point at where the car used to be.
+                settingsRepo.update { it.copy(parkedLabel = null, parkedLat = null, parkedLng = null) }
+                log.add(
+                    LogLevel.WARN,
+                    "Couldn't get your location, so the parked spot wasn't saved. " +
+                        "Check that location is set to \"Allow all the time\".",
+                )
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -157,6 +171,12 @@ class AutoLockController @Inject constructor(
         // configured radius during the confirm window.
         val geoStart: android.location.Location? =
             if (settings.useGeofence) locationHelper.currentLocation() else null
+        if (settings.useGeofence && geoStart == null) {
+            log.add(
+                LogLevel.WARN,
+                "Geofence check skipped: no location. Check that location is set to \"Allow all the time\".",
+            )
+        }
         var lastGeoCheckMs = 0L
         val confirmDeadline = clock() + CONFIRM_TIMEOUT_MS
         while (_state.value.detection == DetectionState.CONFIRMING) {
@@ -166,6 +186,7 @@ class AutoLockController @Inject constructor(
                 if (settings.requireWalkAwayConfirmation && !walkAwayConfirmed) {
                     _state.value = _state.value.copy(detection = DetectionState.SKIPPED, graceRemaining = 0)
                     log.add(LogLevel.INFO, "No walk-away confirmation within the window — not locking.")
+                    refreshStatusAfterSkip(settings)
                     return
                 }
                 advance(DetectionState.GRACE)
@@ -262,6 +283,28 @@ class AutoLockController @Inject constructor(
      * [STATUS_READ_TIMEOUT_MS], pausing 2 s then 4 s between tries. Null (after failing + notifying)
      * when every try fails.
      */
+    /**
+     * After a skip that never reached the pre-lock read, refresh `StatusCache` once so Home, the
+     * widget and the notification show the car as it is now (e.g. unlocked), not the last run's
+     * state. Hyundai's cached snapshot only (never wakes the car); best effort, quiet on failure.
+     */
+    private suspend fun refreshStatusAfterSkip(settings: io.github.gthibo.leavenlock.data.settings.AppSettings) {
+        val vehicleId = settings.vehicleId ?: return
+        try {
+            val client = provider.client(settings)
+            if (!settings.demoMode && !client.ensureFreshSession()) return
+            val status = kotlinx.coroutines.withTimeout(STATUS_READ_TIMEOUT_MS) {
+                client.status(vehicleId, forceRefresh = false)
+            }
+            statusCache.saveStatus(status, StatusSummary.build(status, settings.notificationFields, summaryLabels))
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            if (c is kotlinx.coroutines.TimeoutCancellationException) return
+            throw c
+        } catch (_: Exception) {
+            // Best effort: the card keeps its last status.
+        }
+    }
+
     private suspend fun readStatusWithRetry(
         client: io.github.gthibo.leavenlock.data.bluelink.BlueLinkClient,
         vehicleId: String,
