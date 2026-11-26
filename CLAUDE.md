@@ -272,8 +272,11 @@ shown the spot several blocks off (balanced-power fix up to 60 s old). **Car tes
 (Pixel 11 Pro, debug build of 1f97ef3): passed** — parked spot and Open in Maps correct, garage
 fallback, geofence walk-away, reconnect cancel. **PR #21** (`claude/parked-location-background`,
 background-location request + geocode `onError`/timeout) has `main` merged in, with its
-"clear the old spot + WARN when no fix" branch moved into `rememberParkedSpot()`; it still needs
-its own car test before merge.
+"clear the old spot + WARN when no fix" branch moved into `rememberParkedSpot()`. Partly
+car-tested 2026-11-26 ("Allow all the time" notice passed; feedback fixed: status refresh after a
+walk-away skip, geofence no-location WARN, stacked notice buttons, "Walking detected" log line).
+**Merged before its full car test at the maintainer's call; still to check:** walk-away lock log
+line, Home card after a no-confirmation skip, parked spot after a real drive.
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
