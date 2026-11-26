@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **Sign-in storage updated.** Your stored PIN and BlueLink sign-in now use the Android Keystore
+  directly, because the library they used before is deprecated. They carry over automatically.
+  If you go back to 0.2.0 after updating, you will need to sign in again.
 - **Built for Android 17.** LEAVE/LOCK now targets Android 17, so it follows that version's
   newer rules. On Android 16 and later, the back gesture shows a preview of where you're going
   (for example, a peek at the home screen) before you let go.

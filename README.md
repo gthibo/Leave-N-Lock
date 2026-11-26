@@ -59,7 +59,7 @@ Grab the APK from [Releases](../../releases), or build it yourself (below). Andr
 
 ## Privacy & security
 - Your BlueLink email, password and PIN are stored **encrypted on the phone**
-  (EncryptedSharedPreferences, AES-256-GCM, Android Keystore, StrongBox when available). They
+  (AES-256-GCM with a key held in the Android Keystore, StrongBox when available). They
   are never logged, never backed up (`allowBackup=false`), and only ever sent to Hyundai.
   The password is kept because Hyundai's US sessions expire after about 30 minutes and
   renewing them needs it.
