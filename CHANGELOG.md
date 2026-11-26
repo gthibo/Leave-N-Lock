@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **Lock and unlock from the app show up in the activity log.** Pressing Lock or Unlock on the
+  Home screen now adds a line to the activity log saying whether it worked, failed (and why), or
+  wasn't sent (for example a wrong PIN or Dry run mode). They don't play a sound; sounds are
+  only for auto-lock.
 - **Sign-in storage updated.** Your stored PIN and BlueLink sign-in now use the Android Keystore
   directly, because the library they used before is deprecated. They carry over automatically.
   If you go back to 0.2.0 after updating, you will need to sign in again.
