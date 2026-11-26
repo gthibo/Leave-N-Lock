@@ -48,7 +48,11 @@ logging, multi-user, cloud, or analytics. Kia, Genesis and non-US regions are ou
 - `data/settings/` — `AppSettings`, `SettingsRepository` (DataStore). All non-secret prefs.
 - `data/secure/` — `SecureStore`: BlueLink PIN + US email/password, encrypted. **Never log them.**
 - `data/device/` — `BluetoothDevices` (bonded devices for the car picker).
-- `data/location/` — `LocationHelper` (last location + reverse-geocoded parked label).
+- `data/location/` — `LocationHelper` (last location + reverse-geocoded parked label). It runs
+  from the background (Bluetooth trigger), so it needs `ACCESS_BACKGROUND_LOCATION`; the
+  service's `connectedDevice` type grants no location. Settings asks for it when "Remember parked
+  location" or "Geofence confirmation" is turned on (`BackgroundLocationNotice`). The geocode is
+  bounded (`GEOCODE_TIMEOUT_MS`) and handles `GeocodeListener.onError`, so it can't stall a run.
 - `data/detection/` — `ActivityRecognitionManager`, `GeofenceManager`.
 - `data/status/` — `StatusCache` (last full status; the single source for the Home card, widget
   and notification). Save command results with `saveStatus(…, fromCommand = true)`: for
@@ -345,3 +349,9 @@ New work goes on its own branch cut from `main`.
   4 → 6, Gradle wrapper 9.8.2 → 9.9.0, play-services-location 21.3.0 → 21.4.0,
   accompanist-permissions 0.36.0 → 0.37.3, turbine 1.2.0 → 1.2.1, mockk 1.13.13 → 1.14.12).
   #14 was brought up to date by merging `main` into it (no force-push). CI green on `72c9377`.
+- 2026-11-26 — Parked location fix (`claude/parked-location-background`): the spot was only saved
+  while the app was open, since `ACCESS_BACKGROUND_LOCATION` was declared but never requested.
+  Settings now requests it when "Remember parked location" or "Geofence confirmation" is turned
+  on and shows a notice with "Allow all the time" / "App info" while it's missing. No location →
+  WARN log line and the old spot is cleared. `reverseGeocode` handles `onError` (a lambda left it
+  waiting forever) and times out after 10 s. 1 new test.

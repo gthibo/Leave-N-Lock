@@ -255,6 +255,8 @@
     <string name="set_sound_play_default">Play default</string>
     <string name="set_remember_title">Remember parked location</string>
     <string name="set_remember_sub">Show where you left the car on the status card.</string>
+    <string name="set_bg_location_needed">Needs location set to \"Allow all the time\". Without it, Android gives no location after you leave the car.</string>
+    <string name="set_bg_location_allow">Allow all the time</string>
     <string name="set_pin_title">Pin the notification</string>
     <string name="set_pin_sub">Keep the \"watching\" notification stuck — it re-appears if swiped away.</string>
     <string name="set_locknow_title">\"Lock now\" button</string>

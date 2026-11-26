@@ -1071,6 +1071,35 @@ class AutoLockControllerTest {
     }
 
     @Test
+    fun parkedLocationUnavailableLogsAndClearsTheOldSpot() = runTest {
+        val f = Fixture(backgroundScope)
+        f.settings.value = f.settings.value.copy(
+            rememberParkedLocation = true,
+            parkedLabel = "Home St",
+            parkedLat = 1.0,
+            parkedLng = 2.0,
+        )
+        // Background location missing: the fused provider gives nothing.
+        coEvery { f.locationHelper.currentParkedPlace() } returns null
+        coEvery { f.client.status(any(), any()) } returns f.unlocked()
+
+        f.controller.onTriggerFired()
+        runCurrent()
+
+        // The old spot is wrong now, so it must not stay on the status card.
+        assertNull(f.settings.value.parkedLabel)
+        assertNull(f.settings.value.parkedLat)
+        assertNull(f.settings.value.parkedLng)
+        assertTrue(
+            f.log.entries.value.any {
+                it.level == LogLevel.WARN && it.message.contains("Couldn't get your location")
+            }
+        )
+        // A missing location must not change the lock flow itself.
+        assertEquals(DetectionState.GRACE, f.controller.state.value.detection)
+    }
+
+    @Test
     fun parkedLocationIsNotReadWhenRememberDisabled() = runTest {
         val f = Fixture(backgroundScope)
         f.settings.value = f.settings.value.copy(

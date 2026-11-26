@@ -120,9 +120,19 @@ class AutoLockController @Inject constructor(
         }
         // Optionally remember where the car parked.
         if (settings.rememberParkedLocation) {
-            locationHelper.currentParkedPlace()?.let { place ->
+            val place = locationHelper.currentParkedPlace()
+            if (place != null) {
                 settingsRepo.update { it.copy(parkedLabel = place.label, parkedLat = place.lat, parkedLng = place.lng) }
                 place.label?.let { log.add(LogLevel.INFO, "Parked near $it.") }
+            } else {
+                // Usually background location ("Allow all the time") is missing. Clear the old
+                // spot so the status card doesn't point at where the car used to be.
+                settingsRepo.update { it.copy(parkedLabel = null, parkedLat = null, parkedLng = null) }
+                log.add(
+                    LogLevel.WARN,
+                    "Couldn't get your location, so the parked spot wasn't saved. " +
+                        "Check that location is set to \"Allow all the time\".",
+                )
             }
         }
         val sm = LockStateMachine(settings).also { machine = it }

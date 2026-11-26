@@ -10,6 +10,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,23 +69,43 @@ class LocationHelper @Inject constructor(
         }
     }
 
+    /**
+     * Street label for the spot, or null. Bounded by [GEOCODE_TIMEOUT_MS] and never throws: it runs
+     * inside the auto-lock evaluation, so it must not hold up a lock.
+     */
     private suspend fun reverseGeocode(lat: Double, lng: Double): String? {
         if (!Geocoder.isPresent()) return null
         val geocoder = Geocoder(context, Locale.getDefault())
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                suspendCancellableCoroutine { cont ->
-                    geocoder.getFromLocation(lat, lng, 1) { results ->
-                        cont.resume(results.firstOrNull()?.toLabel())
+            withTimeoutOrNull(GEOCODE_TIMEOUT_MS) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    suspendCancellableCoroutine { cont ->
+                        // A lambda would only implement onGeocode; onError's default does nothing,
+                        // which left this waiting forever when the lookup failed (e.g. no signal).
+                        geocoder.getFromLocation(lat, lng, 1, object : Geocoder.GeocodeListener {
+                            override fun onGeocode(results: MutableList<android.location.Address>) {
+                                if (cont.isActive) cont.resume(results.firstOrNull()?.toLabel())
+                            }
+
+                            override fun onError(errorMessage: String?) {
+                                if (cont.isActive) cont.resume(null)
+                            }
+                        })
                     }
+                } else {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocation(lat, lng, 1)?.firstOrNull()?.toLabel()
                 }
-            } else {
-                @Suppress("DEPRECATION")
-                geocoder.getFromLocation(lat, lng, 1)?.firstOrNull()?.toLabel()
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
+    }
+
+    private companion object {
+        const val GEOCODE_TIMEOUT_MS = 10_000L
     }
 
     private fun android.location.Address.toLabel(): String? {
