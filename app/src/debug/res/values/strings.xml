@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug builds install next to the release (applicationIdSuffix ".debug"); a distinct name
+         tells the two apart in the launcher, App info and the widget picker. -->
+    <string name="app_name">LEAVE/LOCK Debug</string>
+</resources>

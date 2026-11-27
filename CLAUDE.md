@@ -457,3 +457,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   for saved settings/backups) shows as "Car on / off" / "Car on" / "Car off", Home tile "Car".
   `NotificationField.descriptionRes` gives ENGINE and CLIMATE a Settings explanation. The details
   list is no longer hidden behind "Show vehicle status": the widget uses it either way.
+- 2026-11-27 — Debug app name (`claude/debug-app-name`): `app/src/debug/res/values/strings.xml`
+  overrides `app_name` as "LEAVE/LOCK Debug", so the debug build (`.debug` ID, installed next to
+  the release) is distinguishable in the launcher, App info, widget picker and the in-app
+  wordmark. Release builds are unchanged; no CHANGELOG entry (not user-facing).
