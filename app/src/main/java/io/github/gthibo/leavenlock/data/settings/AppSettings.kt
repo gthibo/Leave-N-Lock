@@ -22,8 +22,9 @@ data class KnownVehicle(
 )
 
 /**
- * Pieces of vehicle info the user can show/hide in the status line (widget, and the ongoing
- * notification when "Show vehicle status" is on). [descriptionRes] explains the less obvious ones.
+ * Pieces of vehicle info the user can show/hide ("Vehicle details"): Home's tiles (see
+ * `ui/home/homeTiles`), the widget's status line, and the ongoing notification when "Show vehicle
+ * status" is on. [descriptionRes] explains the less obvious ones.
  * ENGINE keeps its name for saved settings and backups; BlueLink's "engine" flag means the car is
  * on (Ready on an EV).
  */
@@ -52,10 +53,13 @@ data class AppSettings(
     val showLockNowAction: Boolean = true,
     // Pin the ongoing "watching" notification so it re-appears if swiped away.
     val pinNotification: Boolean = true,
+    // Home's tiles follow these too, so 12V and Car on / off are on by default to keep those tiles.
     val notificationFields: Set<NotificationField> = setOf(
         NotificationField.LOCK_STATE,
         NotificationField.EV_BATTERY,
         NotificationField.RANGE,
+        NotificationField.TWELVE_VOLT,
+        NotificationField.ENGINE,
     ),
 
     // Behaviour toggles.
