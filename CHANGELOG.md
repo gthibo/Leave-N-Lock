@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- **Android saves your BlueLink password, not your PIN.** After signing in, Android's "Save
+  password?" offer picked up the 4-digit PIN instead of the password. The sign-in fields now tell
+  Android which is the email and which is the password, and the PIN is left out of autofill.
+
 ## [0.3.0] - 2026-11-27
 
 - **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't

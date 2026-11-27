@@ -52,6 +52,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.Offset
@@ -682,6 +684,9 @@ fun PgField(
     enabled: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    // What the field holds, for Android autofill (fill and "save password"). Without it the
+    // autofill service guesses, and picks the last hidden field.
+    contentType: ContentType? = null,
 ) {
     val c = Porcelain.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
@@ -689,7 +694,9 @@ fun PgField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (contentType != null) Modifier.semantics { this.contentType = contentType } else Modifier),
             enabled = enabled,
             singleLine = true,
             isError = error != null,

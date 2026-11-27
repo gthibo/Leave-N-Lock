@@ -445,3 +445,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
 - 0.3.0 (2026-11-27) — Release after #21–#24 were confirmed in the car. versionCode 2 → 3.
   `## [Unreleased]` rolled into `## [0.3.0]`; start a new `## [Unreleased]` heading with the next
   user-facing change. Last release that ships `LegacySecureStoreReader` / security-crypto.
+- 2026-11-27 — Sign-in autofill hints (`claude/login-autofill-hints`): Android offered to save
+  the PIN as the password (no hints, so the service took the last hidden field). `PgField` takes
+  a Compose `contentType`; Login marks email `Username + EmailAddress`, password `Password`, and
+  the PIN with the custom hint `bluelinkPin` so autofill services skip it.
