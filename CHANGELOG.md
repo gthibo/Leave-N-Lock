@@ -14,6 +14,9 @@
   Home the tile is labelled "Car". It and Climate each have a short explanation in Settings. The
   details list is always visible and says it sets what the widget shows, and what the
   notification shows when "Show vehicle status" is on.
+- **The welcome screen describes the whole app.** It said LEAVE/LOCK "does one job", which
+  undersold it. The welcome screen and the Help page now also mention the car's status, lock and
+  unlock from the app or widget, and the parked spot.
 
 ## [0.3.0] - 2026-11-27
 
