@@ -41,15 +41,13 @@ import io.github.gthibo.leavenlock.ui.components.Hairline
 import io.github.gthibo.leavenlock.ui.components.PgButton
 import io.github.gthibo.leavenlock.ui.components.PgCard
 import io.github.gthibo.leavenlock.ui.components.PgField
+import io.github.gthibo.leavenlock.ui.components.PgPinField
 import io.github.gthibo.leavenlock.ui.components.PgProgress
 import io.github.gthibo.leavenlock.ui.components.PgTopBar
 import io.github.gthibo.leavenlock.ui.components.mutedText
 import io.github.gthibo.leavenlock.ui.theme.porcelain.Porcelain
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainSpace
 import io.github.gthibo.leavenlock.ui.theme.porcelain.PorcelainText
-
-/** Autofill hint for the BlueLink PIN: unknown to autofill services, so they leave it alone. */
-private val BLUELINK_PIN = ContentType("bluelinkPin")
 
 /**
  * Sign-in — one form, one job: email + password (+ optional 4-digit lock PIN).
@@ -203,15 +201,11 @@ private fun SignInForm(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 contentType = ContentType.Password,
             )
-            PgField(
+            // Masked without being flagged as a password, so autofill saves the real password.
+            PgPinField(
                 label = stringResource(R.string.login_pin),
                 value = pin,
                 onValueChange = onPinChange,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                // A hint no autofill service knows, so the PIN is never offered or saved as the
-                // password (unlabelled, it was: the service picks the last hidden field).
-                contentType = BLUELINK_PIN,
             )
 
             (state as? LoginState.Error)?.let {

@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -43,8 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -66,7 +63,7 @@ import io.github.gthibo.leavenlock.ui.components.IconWell
 import io.github.gthibo.leavenlock.ui.components.LabelTone
 import io.github.gthibo.leavenlock.ui.components.PgButton
 import io.github.gthibo.leavenlock.ui.components.PgCard
-import io.github.gthibo.leavenlock.ui.components.PgField
+import io.github.gthibo.leavenlock.ui.components.PgPinField
 import io.github.gthibo.leavenlock.ui.components.PgIcon
 import io.github.gthibo.leavenlock.ui.components.PgIconButton
 import io.github.gthibo.leavenlock.ui.components.PgLabel
@@ -301,12 +298,10 @@ private fun LockCommandDialog(lock: Boolean, requirePin: Boolean, onDismiss: () 
                     style = PorcelainText.body,
                 )
                 if (requirePin) {
-                    PgField(
+                    PgPinField(
                         label = stringResource(R.string.home_pin_label),
                         value = pin,
                         onValueChange = { if (it.length <= 8) pin = it.filter(Char::isDigit) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     )
                 }
             }

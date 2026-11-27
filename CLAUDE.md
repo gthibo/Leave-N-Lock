@@ -473,3 +473,10 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   `help_hero_body` and the README intro no longer say "does one job"; they name status, manual
   lock/unlock + widget, and the parked spot. §1's "One job" and CONTRIBUTING's "keep the mission
   small" stay: they describe scope, not the feature list.
+- 2026-11-27 — PIN not a password (`claude/pin-not-password`): #27's custom `bluelinkPin` hint
+  didn't help; Google autofill still offered to save the PIN. Compose 1.12 overrides it:
+  `KeyboardType.NumberPassword` makes the field set `ContentType.Password` itself, and
+  `PasswordVisualTransformation` adds `password()` semantics → ViewStructure inputType 129 (text
+  password). New `ui/components/PinField.kt`: `PinMask` (dots, not PasswordVisualTransformation),
+  `PgPinField` (`KeyboardType.Number`, hint `bluelinkPin`), used by Login and Home's lock/unlock
+  dialog. Never mask a non-password with PasswordVisualTransformation or NumberPassword.
