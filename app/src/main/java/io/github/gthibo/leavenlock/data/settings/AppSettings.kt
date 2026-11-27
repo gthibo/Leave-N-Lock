@@ -53,10 +53,13 @@ data class AppSettings(
     val showLockNowAction: Boolean = true,
     // Pin the ongoing "watching" notification so it re-appears if swiped away.
     val pinNotification: Boolean = true,
+    // Home's tiles follow these too, so 12V and Car on / off are on by default to keep those tiles.
     val notificationFields: Set<NotificationField> = setOf(
         NotificationField.LOCK_STATE,
         NotificationField.EV_BATTERY,
         NotificationField.RANGE,
+        NotificationField.TWELVE_VOLT,
+        NotificationField.ENGINE,
     ),
 
     // Behaviour toggles.

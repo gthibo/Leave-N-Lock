@@ -17,8 +17,9 @@
 - **Home's tiles follow your detail choices.** The Range, 12V and Car tiles on Home always
   showed, whatever you picked in Settings. Settings → "Vehicle details" now sets what Home shows
   too, and turning on Climate adds a Climate tile when the car reports it. The lock state and drive
-  battery always show. If you never changed the details, Home now shows Range only, so turn on 12V
-  or Car on / off there to bring those tiles back.
+  battery always show. New installs start with 12V and Car on / off turned on as well. If you've
+  already used LEAVE/LOCK, your earlier choices carry over, so if the 12V or Car tile is missing
+  from Home, turn it on under Vehicle details (it then also shows in the notification and widget).
 
 ## [0.3.0] - 2026-11-27
 
