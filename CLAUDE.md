@@ -461,3 +461,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   overrides `app_name` as "LEAVE/LOCK Debug", so the debug build (`.debug` ID, installed next to
   the release) is distinguishable in the launcher, App info, widget picker and the in-app
   wordmark. Release builds are unchanged; no CHANGELOG entry (not user-facing).
+- 2026-11-27 — Welcome copy (`claude/welcome-copy`): `onboarding_welcome_body`,
+  `help_hero_body` and the README intro no longer say "does one job"; they name status, manual
+  lock/unlock + widget, and the parked spot. §1's "One job" and CONTRIBUTING's "keep the mission
+  small" stay: they describe scope, not the feature list.
