@@ -449,3 +449,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   exposes `commandInFlight` (set before the command, cleared in `finally`; a second press while
   one runs is ignored). The pressed button reads "Locking…" / "Unlocking…" with a spinner
   (`PgButton(loading = true)` keeps its colour and ignores taps); the other is disabled.
+- 2026-11-27 — Sign-in autofill hints (`claude/login-autofill-hints`): Android offered to save
+  the PIN as the password (no hints, so the service took the last hidden field). `PgField` takes
+  a Compose `contentType`; Login marks email `Username + EmailAddress`, password `Password`, and
+  the PIN with the custom hint `bluelinkPin` so autofill services skip it.
