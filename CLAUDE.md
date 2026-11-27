@@ -445,3 +445,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
 - 0.3.0 (2026-11-27) — Release after #21–#24 were confirmed in the car. versionCode 2 → 3.
   `## [Unreleased]` rolled into `## [0.3.0]`; start a new `## [Unreleased]` heading with the next
   user-facing change. Last release that ships `LegacySecureStoreReader` / security-crypto.
+- 2026-11-27 — Status line labels (`claude/status-detail-labels`): the `ENGINE` field (name kept
+  for saved settings/backups) shows as "Car on / off" / "Car on" / "Car off", Home tile "Car".
+  `NotificationField.descriptionRes` gives ENGINE and CLIMATE a Settings explanation. The details
+  list is no longer hidden behind "Show vehicle status": the widget uses it either way.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+- **Clearer status line settings.** "Engine" is now "Car on / off" (on an EV, BlueLink's engine
+  flag means the car is on, in Ready), and reads "Car on" or "Car off" in the status line. On
+  Home the tile is labelled "Car". It and Climate each have a short explanation in Settings. The
+  details list is always visible and says it sets what the widget shows, and what the
+  notification shows when "Show vehicle status" is on.
+
 ## [0.3.0] - 2026-11-27
 
 - **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't

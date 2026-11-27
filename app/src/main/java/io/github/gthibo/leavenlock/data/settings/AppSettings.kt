@@ -21,14 +21,19 @@ data class KnownVehicle(
     val model: String,
 )
 
-/** Pieces of vehicle info the user can show/hide in the ongoing notification. */
-enum class NotificationField(@StringRes val labelRes: Int) {
+/**
+ * Pieces of vehicle info the user can show/hide in the status line (widget, and the ongoing
+ * notification when "Show vehicle status" is on). [descriptionRes] explains the less obvious ones.
+ * ENGINE keeps its name for saved settings and backups; BlueLink's "engine" flag means the car is
+ * on (Ready on an EV).
+ */
+enum class NotificationField(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int? = null) {
     LOCK_STATE(R.string.notif_field_lock_state),
     EV_BATTERY(R.string.notif_field_ev_battery),
     RANGE(R.string.notif_field_range),
-    ENGINE(R.string.notif_field_engine),
+    ENGINE(R.string.notif_field_engine, R.string.notif_field_engine_sub),
     TWELVE_VOLT(R.string.notif_field_twelve_volt),
-    CLIMATE(R.string.notif_field_climate),
+    CLIMATE(R.string.notif_field_climate, R.string.notif_field_climate_sub),
 }
 
 /** User-tunable configuration. Persisted via DataStore. */
