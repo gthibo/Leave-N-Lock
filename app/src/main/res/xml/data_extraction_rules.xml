@@ -1,4 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
-    <!-- Nothing is backed up: all data is local & sensitive. -->
-</full-backup-content>
+<!--
+  Android 12+ backup rules (android:dataExtractionRules). Nothing leaves the phone: all app data
+  is local and sensitive (secure_v2 holds the encrypted PIN + sign-in; the other prefs and files
+  hold car location, logs and status). Every domain is excluded from cloud backup and from
+  device-to-device transfer. Settings move between phones only through the in-app export
+  (data/backup/BackupManager).
+
+  Android 11 and below: android:allowBackup="false" and android:fullBackupContent="false" in the
+  manifest already turn backup off, so no separate full-backup-content file is needed.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

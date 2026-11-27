@@ -169,7 +169,10 @@ Host `https://api.telematics.hyundaiusa.com`. Verified against `hyundai_kia_conn
   available (falls back to TEE), no user-auth/unlocked-device requirement (auto-lock reads the
   PIN with the phone locked). A value that can't be decrypted (bad tag, malformed, key
   invalidated) is removed → re-sign-in, never plaintext; other Keystore errors return null but
-  keep the value; failed saves are warned (class name only), never thrown. Not backed up. A
+  keep the value; failed saves are warned (class name only), never thrown. Not backed up: the
+  manifest sets `allowBackup`/`fullBackupContent` false (Android 11 and below) and
+  `res/xml/data_extraction_rules.xml` excludes every domain from `<cloud-backup>` and
+  `<device-transfer>` (Android 12+, where `allowBackup="false"` doesn't stop D2D transfer). A
   one-time migration on first open (warmed up on `Dispatchers.IO` by `AutoLockApp`) copies the
   old `autolock_secure` EncryptedSharedPreferences values in one `commit()` and deletes the old
   file and master key.
@@ -286,9 +289,6 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency
   (planned for the release after v0.3.0; v0.4.0 still ships them, so 0.2.0 installs can still
   migrate). Once removed, a 0.2.0 install updating directly will have to sign in again.
-- `res/xml/data_extraction_rules.xml` holds `<full-backup-content>` instead of
-  `<data-extraction-rules>`, so on Android 12+ device-to-device transfer isn't excluded. Fix it
-  (secrets wouldn't survive a restore anyway: the Keystore key doesn't transfer).
 - Only tested on an Ioniq 5. Gather compatibility reports for other US Hyundais.
 - The live verify read (`refresh: true`) is built from the reference libraries and mock-tested
   only. In the 2026-11-06 car test the cached reads always confirmed first, so it hasn't run
@@ -487,3 +487,10 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   saves the password not the PIN, Vehicle details labels + Home tiles, welcome copy). Minor bump:
   Home's tiles and defaults changed. versionCode 3 → 4. `## [Unreleased]` rolled into
   `## [0.4.0]`; start a new `## [Unreleased]` heading with the next user-facing change.
+- 2026-11-27 — Backup rules (`claude/data-extraction-rules`): `res/xml/data_extraction_rules.xml`
+  had a `<full-backup-content>` root, which Android 12+ doesn't read as `dataExtractionRules`, so
+  device-to-device transfer (not stopped by `allowBackup="false"` there) could copy app data,
+  including `secure_v2` (unusable without the Keystore key, but still). Now a
+  `<data-extraction-rules>` root excluding every domain from `<cloud-backup>` and
+  `<device-transfer>`. Android 11 and below keep `fullBackupContent="false"`, so no separate
+  file. No CHANGELOG entry (not user-visible).
