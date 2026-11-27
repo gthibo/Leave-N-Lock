@@ -462,7 +462,7 @@ fun SettingsScreen(
                     checked = settings.showStatusInNotification,
                     onCheckedChange = viewModel::setShowStatusInNotification,
                 )
-                // Always shown: the widget uses these details even with the notification line off.
+                // Always shown: Home and the widget use these details even with the notification line off.
                 GroupTitle(
                     stringResource(R.string.set_show_details),
                     subtitle = stringResource(R.string.set_show_details_sub),

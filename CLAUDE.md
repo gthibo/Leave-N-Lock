@@ -457,6 +457,12 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   for saved settings/backups) shows as "Car on / off" / "Car on" / "Car off", Home tile "Car".
   `NotificationField.descriptionRes` gives ENGINE and CLIMATE a Settings explanation. The details
   list is no longer hidden behind "Show vehicle status": the widget uses it either way.
+- 2026-11-27 — Home tiles follow the toggles (`claude/home-tiles-follow-toggles`): pure
+  `ui/home/homeTiles(status, fields)` (`HomeTilesTest`, 4 tests) picks Home's tiles from
+  `notificationFields`: RANGE, TWELVE_VOLT, ENGINE → CAR_ON, CLIMATE (new tile + `ic_pg_climate`,
+  only when `climateOn` is reported). Lock state + drive battery always show. Settings group renamed
+  "Vehicle details". Default fields are LOCK_STATE/EV_BATTERY/RANGE, so untouched installs lose
+  the 12V and Car tiles on Home (CHANGELOG says how to bring them back).
 - 2026-11-27 — Debug app name (`claude/debug-app-name`): `app/src/debug/res/values/strings.xml`
   overrides `app_name` as "LEAVE/LOCK Debug", so the debug build (`.debug` ID, installed next to
   the release) is distinguishable in the launcher, App info, widget picker and the in-app

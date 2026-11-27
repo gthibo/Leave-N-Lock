@@ -14,6 +14,11 @@
   Home the tile is labelled "Car". It and Climate each have a short explanation in Settings. The
   details list is always visible and says it sets what the widget shows, and what the
   notification shows when "Show vehicle status" is on.
+- **Home's tiles follow your detail choices.** The Range, 12V and Car tiles on Home always
+  showed, whatever you picked in Settings. Settings → "Vehicle details" now sets what Home shows
+  too, and turning on Climate adds a Climate tile when the car reports it. The lock state and drive
+  battery always show. If you never changed the details, Home now shows Range only, so turn on 12V
+  or Car on / off there to bring those tiles back.
 
 ## [0.3.0] - 2026-11-27
 

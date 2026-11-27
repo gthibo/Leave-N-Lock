@@ -51,6 +51,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gthibo.leavenlock.R
 import io.github.gthibo.leavenlock.data.bluelink.model.LockState
+import io.github.gthibo.leavenlock.data.settings.NotificationField
 import io.github.gthibo.leavenlock.data.settings.RunMode
 import io.github.gthibo.leavenlock.domain.LogEntry
 import io.github.gthibo.leavenlock.domain.LogLevel
@@ -198,6 +199,7 @@ fun HomeScreen(
                         parkedLabel = settings.parkedLabel.takeIf { settings.rememberParkedLocation },
                         parkedLat = settings.parkedLat.takeIf { settings.rememberParkedLocation },
                         parkedLng = settings.parkedLng.takeIf { settings.rememberParkedLocation },
+                        fields = settings.notificationFields,
                         onRefresh = { viewModel.refreshStatus(force = true) },
                     )
                 }
@@ -466,6 +468,7 @@ private fun VehicleStatusCard(
     parkedLabel: String?,
     parkedLat: Double?,
     parkedLng: Double?,
+    fields: Set<NotificationField>,
     onRefresh: () -> Unit,
 ) {
     val status = ui.status
@@ -528,22 +531,38 @@ private fun VehicleStatusCard(
             status.evBatteryPercent?.let { pct ->
                 BatteryMeter(percent = pct)
             }
-            FlowRow(
+            // Tiles follow Settings → "Vehicle details", like the widget and notification.
+            val tiles = homeTiles(status, fields)
+            if (tiles.isNotEmpty()) FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
                 verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
             ) {
-                status.rangeMiles?.let {
-                    AnimatedStatTile(R.drawable.ic_pg_route, stringResource(R.string.home_range_value, it), stringResource(R.string.home_range))
+                fun onOff(on: Boolean?) = if (on == true) R.string.state_on else R.string.state_off
+                tiles.forEach { tile ->
+                    when (tile) {
+                        HomeTile.RANGE -> AnimatedStatTile(
+                            R.drawable.ic_pg_route,
+                            stringResource(R.string.home_range_value, status.rangeMiles ?: 0),
+                            stringResource(R.string.home_range),
+                        )
+                        HomeTile.TWELVE_VOLT -> AnimatedStatTile(
+                            R.drawable.ic_pg_battery,
+                            "${status.twelveVoltPercent}%",
+                            stringResource(R.string.home_twelve_volt),
+                        )
+                        HomeTile.CAR_ON -> AnimatedStatTile(
+                            R.drawable.ic_pg_bolt,
+                            stringResource(onOff(status.engineRunning)),
+                            stringResource(R.string.home_engine),
+                        )
+                        HomeTile.CLIMATE -> AnimatedStatTile(
+                            R.drawable.ic_pg_climate,
+                            stringResource(onOff(status.climateOn)),
+                            stringResource(R.string.home_climate),
+                        )
+                    }
                 }
-                status.twelveVoltPercent?.let {
-                    AnimatedStatTile(R.drawable.ic_pg_battery, "$it%", stringResource(R.string.home_twelve_volt))
-                }
-                AnimatedStatTile(
-                    icon = R.drawable.ic_pg_bolt,
-                    value = if (status.engineRunning) stringResource(R.string.state_on) else stringResource(R.string.state_off),
-                    label = stringResource(R.string.home_engine),
-                )
             }
             status.anyDoorOpen?.takeIf { it }?.let {
                 Text(stringResource(R.string.home_door_open), color = Porcelain.colors.warn, style = PorcelainText.body)
