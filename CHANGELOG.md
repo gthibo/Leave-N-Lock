@@ -9,6 +9,11 @@
 - **Android saves your BlueLink password, not your PIN.** After signing in, Android's "Save
   password?" offer picked up the 4-digit PIN instead of the password. The sign-in fields now tell
   Android which is the email and which is the password, and the PIN is left out of autofill.
+- **Clearer status line settings.** "Engine" is now "Car on / off" (on an EV, BlueLink's engine
+  flag means the car is on, in Ready), and reads "Car on" or "Car off" in the status line. On
+  Home the tile is labelled "Car". It and Climate each have a short explanation in Settings. The
+  details list is always visible and says it sets what the widget shows, and what the
+  notification shows when "Show vehicle status" is on.
 
 ## [0.3.0] - 2026-11-27
 

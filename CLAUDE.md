@@ -453,3 +453,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   the PIN as the password (no hints, so the service took the last hidden field). `PgField` takes
   a Compose `contentType`; Login marks email `Username + EmailAddress`, password `Password`, and
   the PIN with the custom hint `bluelinkPin` so autofill services skip it.
+- 2026-11-27 — Status line labels (`claude/status-detail-labels`): the `ENGINE` field (name kept
+  for saved settings/backups) shows as "Car on / off" / "Car on" / "Car off", Home tile "Car".
+  `NotificationField.descriptionRes` gives ENGINE and CLIMATE a Settings explanation. The details
+  list is no longer hidden behind "Show vehicle status": the widget uses it either way.

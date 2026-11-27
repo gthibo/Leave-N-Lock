@@ -54,18 +54,20 @@
     <string name="notif_default_title">LEAVE/LOCK</string>
     <string name="notif_default_body">Watching for you leaving the car.</string>
 
-    <!-- Notification content fields (Settings toggles + status summary line) -->
+    <!-- Status line fields (Settings toggles + the summary on the notification and widget) -->
     <string name="notif_field_lock_state">Lock state</string>
     <string name="notif_field_ev_battery">Drive battery %</string>
     <string name="notif_field_range">Range</string>
-    <string name="notif_field_engine">Engine</string>
+    <string name="notif_field_engine">Car on / off</string>
+    <string name="notif_field_engine_sub">Whether the car is on (Ready). Auto-lock never locks a car that\'s on.</string>
     <string name="notif_field_twelve_volt">12V battery %</string>
     <string name="notif_field_climate">Climate</string>
+    <string name="notif_field_climate_sub">Whether climate control is running. Shown only when the car reports it.</string>
     <string name="summary_locked">Locked</string>
     <string name="summary_unlocked">Unlocked</string>
     <string name="summary_lock_unknown">Lock: ?</string>
-    <string name="summary_engine_on">Engine on</string>
-    <string name="summary_engine_off">Engine off</string>
+    <string name="summary_engine_on">Car on</string>
+    <string name="summary_engine_off">Car off</string>
     <string name="summary_climate_on">Climate on</string>
     <string name="summary_climate_off">Climate off</string>
     <string name="summary_twelve_volt">12V</string>
@@ -149,7 +151,7 @@
     <string name="home_range">Range</string>
     <string name="home_range_value">%1$d mi</string>
     <string name="home_twelve_volt">12V</string>
-    <string name="home_engine">Engine</string>
+    <string name="home_engine">Car</string>
     <string name="home_door_open">A door appears to be open.</string>
     <string name="home_parked_near">Parked near %1$s</string>
     <string name="cd_open_maps">Open in Maps</string>
@@ -265,8 +267,9 @@
     <string name="set_locknow_title">\"Lock now\" button</string>
     <string name="set_locknow_sub">Show a button to lock immediately, skipping the countdown.</string>
     <string name="set_showstatus_title">Show vehicle status</string>
-    <string name="set_showstatus_sub">Add a live status line to the ongoing notification.</string>
-    <string name="set_show_details">Show these details:</string>
+    <string name="set_showstatus_sub">Add the status line to the ongoing notification.</string>
+    <string name="set_show_details">Status line details</string>
+    <string name="set_show_details_sub">What the status line shows on the home-screen widget and, when it\'s on, the notification.</string>
     <string name="set_theme">Theme</string>
     <string name="set_theme_system">System default</string>
     <string name="set_theme_light">Light</string>

@@ -462,16 +462,18 @@ fun SettingsScreen(
                     checked = settings.showStatusInNotification,
                     onCheckedChange = viewModel::setShowStatusInNotification,
                 )
-                if (settings.showStatusInNotification) {
-                    GroupTitle(stringResource(R.string.set_show_details))
-                    NotificationField.entries.forEach { field ->
-                        SwitchRow(
-                            title = stringResource(field.labelRes),
-                            description = null,
-                            checked = field in settings.notificationFields,
-                            onCheckedChange = { viewModel.toggleNotificationField(field, it) },
-                        )
-                    }
+                // Always shown: the widget uses these details even with the notification line off.
+                GroupTitle(
+                    stringResource(R.string.set_show_details),
+                    subtitle = stringResource(R.string.set_show_details_sub),
+                )
+                NotificationField.entries.forEach { field ->
+                    SwitchRow(
+                        title = stringResource(field.labelRes),
+                        description = field.descriptionRes?.let { stringResource(it) },
+                        checked = field in settings.notificationFields,
+                        onCheckedChange = { viewModel.toggleNotificationField(field, it) },
+                    )
                 }
             }
 
