@@ -3,7 +3,9 @@
 *(Repository and app ID: `Leave-N-Lock` / `io.github.gthibo.leavenlock`.)*
 
 Automatically locks your **Hyundai Ioniq 5** when you walk away and forget to lock it, through
-Hyundai **BlueLink (US)**. One job, on your phone only, running in the background.
+Hyundai **BlueLink (US)**. It runs in the background on your phone only, and also shows the car's
+status, locks and unlocks on request (in the app or from a home-screen widget), and can remember
+where you parked.
 
 - **Tested on:** the author's Ioniq 5 with a US BlueLink account.
 - **May also work** with other BlueLink-enabled US Hyundai vehicles (Ioniq 6, Ioniq 9, Kona

@@ -19,7 +19,7 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_welcome_title">Welcome to LEAVE/LOCK</string>
-    <string name="onboarding_welcome_body">LEAVE/LOCK does one job: it notices when you\'ve left your unlocked Ioniq 5 and locks it for you — automatically, through Hyundai BlueLink (US).</string>
+    <string name="onboarding_welcome_body">LEAVE/LOCK notices when you\'ve walked away from your unlocked Ioniq 5 and locks it for you, through Hyundai BlueLink (US). It also shows the car\'s status, lets you lock or unlock from the app or a home-screen widget, and can remember where you parked.</string>
     <string name="onboarding_how_title">How it works</string>
     <string name="onboarding_how_body">When your phone disconnects from the car\'s Bluetooth, LEAVE/LOCK confirms you walked away, checks the car\'s status, and locks it.</string>
     <string name="onboarding_safety_title">Safe by default</string>
@@ -358,7 +358,7 @@
     <string name="help_title">Help &amp; how it works</string>
     <string name="help_hero_eyebrow">Guide</string>
     <string name="help_hero_title">How it works</string>
-    <string name="help_hero_body">LEAVE/LOCK does one job: it notices when you\'ve left your (unlocked) car and locks it for you. This page explains every setting so you can tune it with confidence.</string>
+    <string name="help_hero_body">LEAVE/LOCK notices when you\'ve walked away from your unlocked car and locks it for you. Alongside that it shows the car\'s status, locks and unlocks on request, and can remember where you parked. This page explains every setting so you can tune it with confidence.</string>
 
     <!-- Help sections -->
     <string name="help_sec_flow">The lock flow, step by step</string>
