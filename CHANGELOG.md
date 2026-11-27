@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.0] - 2026-11-27
 
 - **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't
   confirm you walked away, the Home card, widget and notification kept showing the car's
@@ -119,5 +119,6 @@ Hyundai Ioniq 5 through Hyundai BlueLink (US) when you walk away.
   installed next to the original app.
 - **Tested on** an Ioniq 5 only. Other BlueLink-enabled US Hyundais may work.
 
+[0.3.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.3.0
 [0.2.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.2.0
 [0.1.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.1.0

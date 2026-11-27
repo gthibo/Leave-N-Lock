@@ -262,7 +262,9 @@ notification-channel sound rework), after a car test that passed: walk-away lock
 cancel, widget Lock/Unlock…, start chime + lock sound, What's new. Dependabot #15–#20 are merged
 too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
 accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
-Not yet released: these changes are on `main` only (no v0.3.0 tag). **The security-crypto
+**v0.3.0 is prepared** (`release/0.3.0`: versionCode 3, changelog dated 2026-11-27) and holds
+everything below plus targetSdk 37 and Dependabot #15–#20; tag `v0.3.0` on `main` after the
+release PR merges. **The security-crypto
 replacement is merged** (PR #22, squash 857b1e3). **Car test 2026-11-26 (Pixel 11 Pro, in-place
 update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
@@ -275,8 +277,8 @@ background-location request + geocode `onError`/timeout) has `main` merged in, w
 "clear the old spot + WARN when no fix" branch moved into `rememberParkedSpot()`. Partly
 car-tested 2026-11-26 ("Allow all the time" notice passed; feedback fixed: status refresh after a
 walk-away skip, geofence no-location WARN, stacked notice buttons, "Walking detected" log line).
-**Merged before its full car test at the maintainer's call; still to check:** walk-away lock log
-line, Home card after a no-confirmation skip, parked spot after a real drive.
+Merged before its full car test at the maintainer's call; the maintainer then confirmed #21, #22,
+#23 and #24 all working in the car (2026-11-27).
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
 - Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
@@ -440,3 +442,6 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   geofence has no starting fix; the notice's buttons are stacked full width ("Allow all the time"
   wrapped when side by side). 3 new tests, 252 green. Then an INFO line when walking confirms a
   run (a lock with background location off had no visible reason); 2 tests, 254 green.
+- 0.3.0 (2026-11-27) — Release after #21–#24 were confirmed in the car. versionCode 2 → 3.
+  `## [Unreleased]` rolled into `## [0.3.0]`; start a new `## [Unreleased]` heading with the next
+  user-facing change. Last release that ships `LegacySecureStoreReader` / security-crypto.
