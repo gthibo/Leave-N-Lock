@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-11-27
 
 - **Lock and unlock show that they're working.** After you confirm Lock or Unlock on Home, the
   button now reads "Locking…" or "Unlocking…" with a spinner until the car answers, which can
@@ -11,11 +11,11 @@
   Android which is the email and which is the password, and the PIN fields (on sign-in and in the
   Lock/Unlock confirmation) are no longer marked as passwords, so autofill leaves them alone. The
   PIN still shows as dots while you type it.
-- **Clearer status line settings.** "Engine" is now "Car on / off" (on an EV, BlueLink's engine
-  flag means the car is on, in Ready), and reads "Car on" or "Car off" in the status line. On
-  Home the tile is labelled "Car". It and Climate each have a short explanation in Settings. The
-  details list is always visible and says it sets what the widget shows, and what the
-  notification shows when "Show vehicle status" is on.
+- **Clearer vehicle details settings.** "Engine" is now "Car on / off" (on an EV, BlueLink's
+  engine flag means the car is on, in Ready), and reads "Car on" or "Car off" in the notification
+  and widget. On Home the tile is labelled "Car". It and Climate each have a short explanation in
+  Settings. The list, now called "Vehicle details", is always visible, even with "Show vehicle
+  status" off, and says where each choice shows.
 - **The welcome screen describes the whole app.** It said LEAVE/LOCK "does one job", which
   undersold it. The welcome screen and the Help page now also mention the car's status, lock and
   unlock from the app or widget, and the parked spot.
@@ -145,6 +145,7 @@ Hyundai Ioniq 5 through Hyundai BlueLink (US) when you walk away.
   installed next to the original app.
 - **Tested on** an Ioniq 5 only. Other BlueLink-enabled US Hyundais may work.
 
+[0.4.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.4.0
 [0.3.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.3.0
 [0.2.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.2.0
 [0.1.0]: https://github.com/gthibo/Leave-N-Lock/releases/tag/v0.1.0

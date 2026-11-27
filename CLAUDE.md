@@ -262,9 +262,11 @@ notification-channel sound rework), after a car test that passed: walk-away lock
 cancel, widget Lock/Unlock…, start chime + lock sound, What's new. Dependabot #15–#20 are merged
 too (setup-java 6, Gradle wrapper 9.9.0, play-services-location 21.4.0,
 accompanist-permissions 0.37.3, turbine 1.2.1, mockk 1.14.12); CI green on the combined `main`.
-**v0.3.0 is prepared** (`release/0.3.0`: versionCode 3, changelog dated 2026-11-27) and holds
-everything below plus targetSdk 37 and Dependabot #15–#20; tag `v0.3.0` on `main` after the
-release PR merges. **The security-crypto
+**v0.3.0 is released** (PR #25, tag on c62363b; signed with the same cert as 0.2.0) and holds
+everything below plus targetSdk 37 and Dependabot #15–#20. **v0.4.0 is prepared**
+(`release/0.4.0`: versionCode 4, changelog dated 2026-11-27) with the 2026-11-27 phone-test
+fixes (#26–#32; all confirmed on the Pixel); tag `v0.4.0` on `main` after the release PR merges.
+**The security-crypto
 replacement is merged** (PR #22, squash 857b1e3). **Car test 2026-11-26 (Pixel 11 Pro, in-place
 update from the 0.2.0 debug build): passed** — migration ran (`secure_v2` holds PIN + sign-in,
 `autolock_secure` gone), still signed in, walk-away auto-lock, widget Unlock… with PIN, sign-out
@@ -281,8 +283,9 @@ Merged before its full car test at the maintainer's call; the maintainer then co
 #23 and #24 all working in the car (2026-11-27).
 Ideas not started yet, in priority order: US diagnostics export with redaction; Stats "Session
 expires" row; car-reported location. New work goes on its own branch cut from `main`.
-- Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency in the
-  release after v0.3.0 (kept for v0.3.0 only so the migration can read old installs).
+- Remove `LegacySecureStoreReader` and the `androidx.security:security-crypto` dependency
+  (planned for the release after v0.3.0; v0.4.0 still ships them, so 0.2.0 installs can still
+  migrate). Once removed, a 0.2.0 install updating directly will have to sign in again.
 - `res/xml/data_extraction_rules.xml` holds `<full-backup-content>` instead of
   `<data-extraction-rules>`, so on Android 12+ device-to-device transfer isn't excluded. Fix it
   (secrets wouldn't survive a restore anyway: the Keystore key doesn't transfer).
@@ -444,7 +447,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   run (a lock with background location off had no visible reason); 2 tests, 254 green.
 - 0.3.0 (2026-11-27) — Release after #21–#24 were confirmed in the car. versionCode 2 → 3.
   `## [Unreleased]` rolled into `## [0.3.0]`; start a new `## [Unreleased]` heading with the next
-  user-facing change. Last release that ships `LegacySecureStoreReader` / security-crypto.
+  user-facing change. Ships `LegacySecureStoreReader` / security-crypto (so does 0.4.0).
 - 2026-11-27 — Home lock/unlock progress (`claude/manual-command-progress`): `HomeViewModel`
   exposes `commandInFlight` (set before the command, cleared in `finally`; a second press while
   one runs is ignored). The pressed button reads "Locking…" / "Unlocking…" with a spinner
@@ -480,3 +483,7 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
   password). New `ui/components/PinField.kt`: `PinMask` (dots, not PasswordVisualTransformation),
   `PgPinField` (`KeyboardType.Number`, hint `bluelinkPin`), used by Login and Home's lock/unlock
   dialog. Never mask a non-password with PasswordVisualTransformation or NumberPassword.
+- 0.4.0 (2026-11-27) — Release of the phone-test fixes #26–#32 (lock/unlock progress, autofill
+  saves the password not the PIN, Vehicle details labels + Home tiles, welcome copy). Minor bump:
+  Home's tiles and defaults changed. versionCode 3 → 4. `## [Unreleased]` rolled into
+  `## [0.4.0]`; start a new `## [Unreleased]` heading with the next user-facing change.
