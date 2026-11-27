@@ -54,6 +54,7 @@ import io.github.gthibo.leavenlock.data.bluelink.model.LockState
 import io.github.gthibo.leavenlock.data.settings.RunMode
 import io.github.gthibo.leavenlock.domain.LogEntry
 import io.github.gthibo.leavenlock.domain.LogLevel
+import io.github.gthibo.leavenlock.domain.ManualCommand
 import io.github.gthibo.leavenlock.domain.detection.DetectionState
 import io.github.gthibo.leavenlock.ui.components.BrandLockup
 import io.github.gthibo.leavenlock.ui.components.ButtonVariant
@@ -100,6 +101,7 @@ fun HomeScreen(
     val vehicleStatus by viewModel.vehicleStatus.collectAsStateWithLifecycle()
     val lockResult by viewModel.lockResult.collectAsStateWithLifecycle()
     val notice by viewModel.notice.collectAsStateWithLifecycle()
+    val commandInFlight by viewModel.commandInFlight.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     // null = no dialog; true = lock; false = unlock.
@@ -217,24 +219,39 @@ fun HomeScreen(
                         if (settings.isConfigured || settings.demoMode) {
                             val alreadyLocked = vehicleStatus.status?.lockState == LockState.LOCKED
                             val alreadyUnlocked = vehicleStatus.status?.lockState == LockState.UNLOCKED
+                            // While a command waits for the car, the pressed button shows progress
+                            // and the other one is unavailable, so a second command can't be sent.
+                            val locking = commandInFlight == ManualCommand.LOCK
+                            val unlocking = commandInFlight == ManualCommand.UNLOCK
+                            val busy = commandInFlight != null
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(PorcelainSpace.s2),
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 PgButton(
-                                    text = if (alreadyLocked) stringResource(R.string.action_already_locked) else stringResource(R.string.action_lock_now),
+                                    text = when {
+                                        locking -> stringResource(R.string.action_locking)
+                                        alreadyLocked -> stringResource(R.string.action_already_locked)
+                                        else -> stringResource(R.string.action_lock_now)
+                                    },
                                     onClick = { pendingCommand = true },
                                     modifier = Modifier.weight(1f),
                                     icon = R.drawable.ic_pg_lock,
-                                    enabled = !alreadyLocked,
+                                    enabled = !alreadyLocked && !busy,
+                                    loading = locking,
                                 )
                                 PgButton(
-                                    text = if (alreadyUnlocked) stringResource(R.string.action_already_unlocked) else stringResource(R.string.action_unlock_now),
+                                    text = when {
+                                        unlocking -> stringResource(R.string.action_unlocking)
+                                        alreadyUnlocked -> stringResource(R.string.action_already_unlocked)
+                                        else -> stringResource(R.string.action_unlock_now)
+                                    },
                                     onClick = { pendingCommand = false },
                                     modifier = Modifier.weight(1f),
                                     variant = ButtonVariant.Danger,
                                     icon = R.drawable.ic_pg_unlock,
-                                    enabled = !alreadyUnlocked,
+                                    enabled = !alreadyUnlocked && !busy,
+                                    loading = unlocking,
                                 )
                             }
                         }
