@@ -87,6 +87,9 @@
     <string name="action_already_locked">Already locked</string>
     <string name="action_unlock_now">Unlock now</string>
     <string name="action_already_unlocked">Already unlocked</string>
+    <!-- Home: shown on the pressed button while the command waits for the car (up to ~30 s). -->
+    <string name="action_locking">Locking…</string>
+    <string name="action_unlocking">Unlocking…</string>
     <!-- Widget: the ellipsis says a confirmation follows (the app opens on the unlock dialog). -->
     <string name="widget_unlock">Unlock…</string>
     <string name="widget_auto_lock_running">Auto-lock running…</string>

@@ -29,6 +29,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -52,6 +53,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.Offset
@@ -284,6 +287,9 @@ fun PgButton(
     variant: ButtonVariant = ButtonVariant.Primary,
     @DrawableRes icon: Int? = null,
     enabled: Boolean = true,
+    // Work is running: a spinner replaces the icon, taps are ignored, and the button keeps its
+    // colour so it doesn't read as unavailable.
+    loading: Boolean = false,
 ) {
     val c = Porcelain.colors
     val (container, content) = when (variant) {
@@ -295,13 +301,13 @@ fun PgButton(
     Button(
         onClick = onClick,
         modifier = modifier.heightIn(min = PorcelainSpace.touchTarget),
-        enabled = enabled,
+        enabled = enabled && !loading,
         shape = PorcelainShape.radiusSm,
         colors = ButtonDefaults.buttonColors(
             containerColor = container,
             contentColor = content,
-            disabledContainerColor = c.surfaceSunken,
-            disabledContentColor = c.inkMuted,
+            disabledContainerColor = if (loading) container else c.surfaceSunken,
+            disabledContentColor = if (loading) content else c.inkMuted,
         ),
         elevation = null,
         border = if (variant == ButtonVariant.Secondary && enabled) {
@@ -311,7 +317,14 @@ fun PgButton(
             horizontal = if (variant == ButtonVariant.Ghost) PorcelainSpace.s3 else PorcelainSpace.s4,
         ),
     ) {
-        if (icon != null) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = LocalContentColor.current,
+                strokeWidth = 2.dp,
+            )
+            Spacer(Modifier.width(PorcelainSpace.s2))
+        } else if (icon != null) {
             PgIcon(icon, contentDescription = null, size = 18.dp, tint = LocalContentColor.current)
             Spacer(Modifier.width(PorcelainSpace.s2))
         }
@@ -682,6 +695,9 @@ fun PgField(
     enabled: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    // What the field holds, for Android autofill (fill and "save password"). Without it the
+    // autofill service guesses, and picks the last hidden field.
+    contentType: ContentType? = null,
 ) {
     val c = Porcelain.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PorcelainSpace.s2)) {
@@ -689,7 +705,9 @@ fun PgField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (contentType != null) Modifier.semantics { this.contentType = contentType } else Modifier),
             enabled = enabled,
             singleLine = true,
             isError = error != null,

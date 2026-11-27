@@ -445,6 +445,14 @@ expires" row; car-reported location. New work goes on its own branch cut from `m
 - 0.3.0 (2026-11-27) — Release after #21–#24 were confirmed in the car. versionCode 2 → 3.
   `## [Unreleased]` rolled into `## [0.3.0]`; start a new `## [Unreleased]` heading with the next
   user-facing change. Last release that ships `LegacySecureStoreReader` / security-crypto.
+- 2026-11-27 — Home lock/unlock progress (`claude/manual-command-progress`): `HomeViewModel`
+  exposes `commandInFlight` (set before the command, cleared in `finally`; a second press while
+  one runs is ignored). The pressed button reads "Locking…" / "Unlocking…" with a spinner
+  (`PgButton(loading = true)` keeps its colour and ignores taps); the other is disabled.
+- 2026-11-27 — Sign-in autofill hints (`claude/login-autofill-hints`): Android offered to save
+  the PIN as the password (no hints, so the service took the last hidden field). `PgField` takes
+  a Compose `contentType`; Login marks email `Username + EmailAddress`, password `Password`, and
+  the PIN with the custom hint `bluelinkPin` so autofill services skip it.
 - 2026-11-27 — Status line labels (`claude/status-detail-labels`): the `ENGINE` field (name kept
   for saved settings/backups) shows as "Car on / off" / "Car on" / "Car off", Home tile "Car".
   `NotificationField.descriptionRes` gives ENGINE and CLIMATE a Settings explanation. The details
