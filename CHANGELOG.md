@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- **Lock and unlock show that they're working.** After you confirm Lock or Unlock on Home, the
+  button now reads "Locking…" or "Unlocking…" with a spinner until the car answers, which can
+  take up to half a minute. Both buttons are unavailable meanwhile, so a second press can't send
+  another command.
+
 ## [0.3.0] - 2026-11-27
 
 - **The status card updates when auto-lock skips.** If LEAVE/LOCK didn't lock because it couldn't

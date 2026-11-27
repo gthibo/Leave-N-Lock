@@ -114,6 +114,11 @@ class HomeViewModel @Inject constructor(
     val lockResult: StateFlow<String?> = _lockResult
     fun clearLockResult() { _lockResult.value = null }
 
+    // The Home lock/unlock being sent right now, or null. A US command waits up to ~30 s for the
+    // car to confirm, so Home shows progress and ignores a second press until it finishes.
+    private val _commandInFlight = MutableStateFlow<ManualCommand?>(null)
+    val commandInFlight: StateFlow<ManualCommand?> = _commandInFlight
+
     /** Manually lock now — gated by the BlueLink PIN when one is stored. */
     fun manualLock(pin: String?) = runManual(ManualCommand.LOCK, pin)
 
@@ -125,7 +130,19 @@ class HomeViewModel @Inject constructor(
      * (sent or refused) also gets one Activity-log line via [manualCommandLogLine]. No sound:
      * the user is looking at the screen, and sounds stay reserved for auto-lock.
      */
-    private fun runManual(command: ManualCommand, pin: String?) = viewModelScope.launch {
+    private fun runManual(command: ManualCommand, pin: String?) {
+        if (_commandInFlight.value != null) return
+        _commandInFlight.value = command
+        viewModelScope.launch {
+            try {
+                sendManual(command, pin)
+            } finally {
+                _commandInFlight.value = null
+            }
+        }
+    }
+
+    private suspend fun sendManual(command: ManualCommand, pin: String?) {
         val s = settingsRepo.settings.first()
         fun finish(outcome: ManualOutcome, onScreen: String) {
             _lockResult.value = onScreen
@@ -134,22 +151,22 @@ class HomeViewModel @Inject constructor(
         }
         if (s.runMode != RunMode.ARMED) {
             finish(ManualOutcome.DryRun, "Dry run — no ${command.noun} command sent.")
-            return@launch
+            return
         }
         val stored = secureStore.loadPin()
         if (stored != null && pin != stored) {
             finish(ManualOutcome.WrongPin, "Incorrect PIN.")
-            return@launch
+            return
         }
         val vehicleId = s.vehicleId ?: run {
             finish(ManualOutcome.NoVehicle, "No vehicle selected.")
-            return@launch
+            return
         }
         val client = provider.client(s)
         if (!s.demoMode && !client.ensureFreshSession()) {
             finish(ManualOutcome.SessionExpired, "Session expired — sign in again.")
             _vehicleStatus.update { it.copy(needsReauth = true) }
-            return@launch
+            return
         }
         val result = when (command) {
             ManualCommand.LOCK -> client.lock(vehicleId)
